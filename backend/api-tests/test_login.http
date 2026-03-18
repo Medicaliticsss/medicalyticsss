@@ -1,2 +1,0 @@
-### Test logowania laboratorium
-POST http://localhost:8080/api/auth/login?username=lab_olsztyn_01&password=lab2026
