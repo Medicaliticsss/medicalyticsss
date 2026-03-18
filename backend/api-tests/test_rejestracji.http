@@ -1,0 +1,2 @@
+### Rejestracja nowego użytkownika
+POST http://localhost:8080/api/auth/register?username=lab_olsztyn&password=SuperTajneHaslo123
