@@ -157,7 +157,7 @@ public class Main extends Application {
         createRegisterScene();
         createDashboardScene();
 
-        window.setScene(dashboardScene);
+        window.setScene(loginScene);
         window.show();
     }
 
