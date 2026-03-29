@@ -36,11 +36,11 @@ public class Main extends Application {
         usernameInput.setPromptText("Login");
         usernameInput.setMaxWidth(200);
         PasswordField passwordInput = new PasswordField();
-        passwordInput.setPromptText("Password");
+        passwordInput.setPromptText("Hasło");
         passwordInput.setMaxWidth(200);
         Label errorLabel = new Label();
         //przycisk logowania
-        Button loginButton = new Button("Log in");
+        Button loginButton = new Button("Zaloguj się");
         loginButton.setOnAction(e -> {
             HttpClient client = HttpClient.newHttpClient();
             String formBody = "username=" + usernameInput.getText() + "&password=" + passwordInput.getText();
@@ -64,7 +64,7 @@ public class Main extends Application {
                     });
         });
         //przycisk rejestracji
-        Button registerButton = new Button("Register");
+        Button registerButton = new Button("Zarejestruj się");
         registerButton.setOnAction(e -> window.setScene(registerScene));
 
         layout.getChildren().addAll(titleLabel, usernameInput, passwordInput, loginButton, registerButton, errorLabel);
@@ -76,29 +76,29 @@ public class Main extends Application {
         layout.setPadding(new Insets(20));
         layout.setAlignment(Pos.CENTER);
         layout.setStyle("-fx-background-color: #FFD580;");
-        Label titleLabel = new Label("Medicalytics Registration");
+        Label titleLabel = new Label("Medicalytics Rejestracja");
         titleLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
         TextField usernameInput = new TextField();
-        usernameInput.setPromptText("Create username");
+        usernameInput.setPromptText("Stwórz login");
         usernameInput.setMaxWidth(200);
         PasswordField passwordInput = new PasswordField();
-        passwordInput.setPromptText("Create password");
+        passwordInput.setPromptText("Stwórz hasło");
         passwordInput.setMaxWidth(200);
         PasswordField confirmPasswordInput = new PasswordField();
-        confirmPasswordInput.setPromptText("Confirm password");
+        confirmPasswordInput.setPromptText("Potwierdź hasło");
         confirmPasswordInput.setMaxWidth(200);
         Label statusLabel = new Label();
-        Button registerButton = new Button("Create account");
+        Button registerButton = new Button("Stwórz konto");
         registerButton.setOnAction(e -> {
             String username = usernameInput.getText();
             String password = passwordInput.getText();
             String confirmPassword = confirmPasswordInput.getText();
             if (username.equals("") || password.equals("")) {
-                statusLabel.setText("Empty Fields");
+                statusLabel.setText("Puste pola");
                 return;
             }
             if (!password.equals(confirmPassword)) {
-                statusLabel.setText("Passwords do not match!");
+                statusLabel.setText("Hasła nie są takie same!");
                 return;
             }
             HttpClient client = HttpClient.newHttpClient();
@@ -116,7 +116,7 @@ public class Main extends Application {
                         });
                     });
         });
-        Button backButton = new Button("Back to login");
+        Button backButton = new Button("Powrót do logowania");
         backButton.setOnAction(e -> window.setScene(loginScene));
 
         layout.getChildren().addAll(titleLabel, usernameInput, passwordInput, confirmPasswordInput, registerButton, backButton, statusLabel);
@@ -130,7 +130,7 @@ public class Main extends Application {
 
         Label welcomeLabel = new Label("Medicalytics");
         welcomeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        Label fileStatusLabel = new Label("No file loaded.");
+        Label fileStatusLabel = new Label("Brak plików");
 
         Button uploadCsvButton = new Button("Upload data file (CSV)");
         uploadCsvButton.setOnAction(e -> {
@@ -141,7 +141,7 @@ public class Main extends Application {
             }
         });
 
-        Button logoutButton = new Button("Logout");
+        Button logoutButton = new Button("Wyloguj się");
         logoutButton.setOnAction(e -> window.setScene(loginScene));
 
         layout.getChildren().addAll(welcomeLabel, uploadCsvButton, fileStatusLabel, logoutButton);
