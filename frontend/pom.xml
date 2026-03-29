@@ -60,7 +60,7 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.example.frontend/com.example.frontend.HelloApplication</mainClass>
+                            <mainClass>com.example.frontend/com.example.frontend.Main</mainClass>
                             <launcher>app</launcher>
                             <jlinkZipName>app</jlinkZipName>
                             <jlinkImageName>app</jlinkImageName>
