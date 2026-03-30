@@ -10,17 +10,28 @@ Projekt opiera się na klasycznej architekturze **Klient-Serwer**, rozdzielając
 * **Budowa:** Projekt zarządzany przez narzędzie Maven (`javafx-maven-plugin`).
 
 ### 2. Backend (Serwer REST API)
-* **Technologia:** Java, Spring Boot 3
+* **Technologia:** Java, **Spring Boot 4.0.3**
 * **Rola:** Obsługuje żądania HTTP od klienta, weryfikuje dane i zarządza bezpieczeństwem.
-* **Bezpieczeństwo:** Wykorzystuje **Spring Security**. Hasła użytkowników nie są przechowywane otwartym tekstem – są hashowane przy użyciu algorytmu **BCrypt**.
+* **Bezpieczeństwo:** Wykorzystuje **Spring Security** oraz dedykowany `AuthController`. Hasła użytkowników są zabezpieczone przy użyciu algorytmu **BCrypt** (szyfrowanie jednokierunkowe).
+* **Konfiguracja:** Klasa `SecurityConfig` zarządza dostępem do endpointów i definiuje Bean dla `PasswordEncoder`.
 
-### 3. Baza Danych
+### 3. Baza Danych i Zarządzanie Schematem
 * **Technologia:** MariaDB (Relacyjna Baza Danych)
-* **Rola:** Trwałe przechowywanie danych systemu, w tym poświadczeń użytkowników (tabela `users` z kolumnami `username` i `password_hash`). Połączenie z Backendem realizowane jest przez Spring Data JPA/Hibernate.
+* **Zarządzanie strukturą (Flyway):** System wykorzystuje narzędzie **Flyway** do wersjonowania bazy danych.
+    * Skrypty SQL znajdują się w `src/main/resources/db/migration`.
+    * Przy starcie aplikacji klasa `FlywayConfig` wymusza uruchomienie migracji, zapewniając identyczną strukturę tabel u wszystkich członków zespołu.
+* **Komunikacja:** Mapowanie obiektowo-relacyjne (ORM) realizowane przez **Spring Data JPA / Hibernate**.
 
-## Przepływ Danych (Logowanie)
+## Przepływ Danych
+
+### Zarządzanie Bazą (Migracje)
+1. Podczas startu serwera Flyway sprawdza tabelę `flyway_schema_history`.
+2. Jeśli w folderze `db/migration` znajdują się nowe pliki (np. `V1`, `V2`), Flyway wykonuje je sekwencyjnie.
+3. Gwarantuje to, że baza danych `medicalytics` zawsze posiada aktualne tabele (np. `users`, `dim_patient`, `fact_test_results`).
+
+### Proces Autoryzacji (Logowanie)
 1. Użytkownik wpisuje dane w oknie JavaFX.
-2. Frontend wysyła żądanie `POST` z danymi do Backendu.
-3. Backend pobiera z bazy danych hash hasła dla podanego loginu.
-4. BCrypt porównuje wpisane hasło z hashem z bazy.
-5. Backend zwraca odpowiedź (sukces/błąd) do Frontendu, który odpowiednio zmienia widok (na Dashboard).
+2. Frontend wysyła żądanie `POST` na endpoint `/api/auth/login`.
+3. `AuthController` wyszukuje użytkownika w bazie poprzez `UserRepository`.
+4. `BCryptPasswordEncoder` porównuje wpisane hasło (tekst jawny) z bezpiecznym hashem przechowywanym w kolumnie `password_hash`.
+5. Serwer zwraca informację o sukcesie lub błędzie, na podstawie której Frontend decyduje o zmianie widoku.
