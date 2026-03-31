@@ -32,9 +32,9 @@ CREATE TABLE dim_facility (
 -- 2. Tabela historii plików (Zależy od users)
 CREATE TABLE files_history (
                                id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-                               user_id BIGINT NOT NULL,
+                               user_id BIGINT,
                                filename VARCHAR(255) NOT NULL,
-                               status ENUM('SUCCESS', 'PARTIAL_SUCCESS', 'ERROR') NOT NULL,
+                               status ENUM('UPLOADED', 'SUCCESS', 'PARTIAL_SUCCESS', 'ERROR') NOT NULL,
                                success_count INT DEFAULT 0,
                                error_count INT DEFAULT 0,
                                upload_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP,

@@ -1,0 +1,6 @@
+id,imie,nazwisko,data_urodzenia,plec,grupa_krwi,diagnoza
+1,Jan,Kowalski,1985-05-12,M,A+,Nadcisnienie
+2,Anna,Nowak,1992-08-24,F,0-,Cukrzyca
+3,Piotr,Wisniewski,1978-11-03,M,B+,Astma
+4,Maria,Wojcik,2001-02-15,F,AB+,Alergia
+5,Stefan,Zalewski,1965-12-30,M,0+,Zapalenie pluc
