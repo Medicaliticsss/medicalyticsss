@@ -128,16 +128,22 @@ public class Main extends Application {
         layout.setAlignment(Pos.CENTER);
         layout.setStyle("-fx-background-color: #FFF3E0;");
 
-        Label welcomeLabel = new Label("Medicalytics");
+        Label welcomeLabel = new Label("Medicalytics - Panel");
         welcomeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        Label fileStatusLabel = new Label("Brak plików");
+        Label fileStatusLabel = new Label("Brak wybranych plików");
 
         Button uploadCsvButton = new Button("Upload data file (CSV)");
         uploadCsvButton.setOnAction(e -> {
             FileChooser fileChooser = new FileChooser();
+            // Filtrujemy tylko pliki CSV
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Pliki CSV", "*.csv"));
+
             File selectedFile = fileChooser.showOpenDialog(window);
+
             if (selectedFile != null) {
-                fileStatusLabel.setText("File: " + selectedFile.getName());
+                fileStatusLabel.setText("Wysyłanie: " + selectedFile.getName() + "...");
+                // Wywołujemy nową metodę wysyłającą plik
+                sendCsvToBackend(selectedFile, fileStatusLabel);
             }
         });
 
@@ -146,6 +152,60 @@ public class Main extends Application {
 
         layout.getChildren().addAll(welcomeLabel, uploadCsvButton, fileStatusLabel, logoutButton);
         dashboardScene = new Scene(layout, 500, 400);
+    }
+
+    private void sendCsvToBackend(File file, Label statusLabel) {
+        try {
+            String boundary = "---" + System.currentTimeMillis(); // Unikalny separator dla danych
+            HttpClient client = HttpClient.newHttpClient();
+
+            byte[] multipartBody = createMultipartBody(file, boundary);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/api/files/upload"))
+                    .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                    .POST(HttpRequest.BodyPublishers.ofByteArray(multipartBody))
+                    .build();
+
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        Platform.runLater(() -> {
+                            if (response.statusCode() == 200) {
+                                statusLabel.setText("Sukces: " + response.body());
+                            } else {
+                                statusLabel.setText("Błąd (" + response.statusCode() + "): " + response.body());
+                            }
+                        });
+                    })
+                    .exceptionally(ex -> {
+                        Platform.runLater(() -> statusLabel.setText("Błąd połączenia: " + ex.getMessage()));
+                        return null;
+                    });
+
+        } catch (Exception e) {
+            statusLabel.setText("Błąd systemowy: " + e.getMessage());
+        }
+    }
+
+    // Ta metoda buduje strukturę pod @RequestParam("file") w Springu
+    private byte[] createMultipartBody(File file, String boundary) throws Exception {
+        String fileName = file.getName();
+        byte[] fileContent = java.nio.file.Files.readAllBytes(file.toPath());
+
+        // Nagłówki części pliku
+        String head = "--" + boundary + "\r\n" +
+                "Content-Disposition: form-data; name=\"file\"; filename=\"" + fileName + "\"\r\n" +
+                "Content-Type: text/csv\r\n\r\n";
+
+        String tail = "\r\n--" + boundary + "--\r\n";
+
+        // Łączymy wszystko w jedną tablicę
+        java.io.ByteArrayOutputStream os = new java.io.ByteArrayOutputStream();
+        os.write(head.getBytes());
+        os.write(fileContent);
+        os.write(tail.getBytes());
+
+        return os.toByteArray();
     }
 
     @Override
