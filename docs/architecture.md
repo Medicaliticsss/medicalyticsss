@@ -1,37 +1,38 @@
 # Architektura Systemu Medicalytics
 
-Projekt opiera się na klasycznej architekturze **Klient-Serwer**, rozdzielając interfejs użytkownika od logiki biznesowej i bazy danych.
+Projekt opiera się na klasycznej architekturze **Klient-Serwer**, rozdzielając interfejs użytkownika od logiki biznesowej i bazy danych. System integruje moduł **Autoryzacji** z zaawansowanym modułem **ETL (Extract, Transform, Load)**.
 
 ## Komponenty Systemu
 
 ### 1. Frontend (Aplikacja Desktopowa)
 * **Technologia:** JavaFX (Java 17+)
-* **Rola:** Interfejs graficzny użytkownika (GUI). Aplikacja nie łączy się bezpośrednio z bazą danych, lecz komunikuje się z Backendem za pomocą wbudowanego klienta `java.net.http.HttpClient`.
-* **Budowa:** Projekt zarządzany przez narzędzie Maven (`javafx-maven-plugin`).
+* **Rola:** GUI umożliwiające logowanie, rejestrację oraz zarządzanie procesem wgrywania i analizy plików CSV.
+* **Komunikacja:** Wykorzystuje `HttpClient` do łączenia się z REST API.
 
 ### 2. Backend (Serwer REST API)
-* **Technologia:** Java, **Spring Boot 4.0.3**
-* **Rola:** Obsługuje żądania HTTP od klienta, weryfikuje dane i zarządza bezpieczeństwem.
-* **Bezpieczeństwo:** Wykorzystuje **Spring Security** oraz dedykowany `AuthController`. Hasła użytkowników są zabezpieczone przy użyciu algorytmu **BCrypt** (szyfrowanie jednokierunkowe).
-* **Konfiguracja:** Klasa `SecurityConfig` zarządza dostępem do endpointów i definiuje Bean dla `PasswordEncoder`.
+* **Technologia:** Java, Spring Boot 3.x.
+* **Bezpieczeństwo (Spring Security):** * Zarządza dostępem do endpointów.
+  * Hasła są szyfrowane jednostronnie algorytmem **BCrypt**.
+* **Moduł ETL:** Klasa `CsvProcessingService` odpowiada za walidację medyczną, anonimizację PESEL (SHA-256) oraz logikę "Upsert" wymiarów.
 
-### 3. Baza Danych i Zarządzanie Schematem
-* **Technologia:** MariaDB (Relacyjna Baza Danych)
-* **Zarządzanie strukturą (Flyway):** System wykorzystuje narzędzie **Flyway** do wersjonowania bazy danych.
-    * Skrypty SQL znajdują się w `src/main/resources/db/migration`.
-    * Przy starcie aplikacji klasa `FlywayConfig` wymusza uruchomienie migracji, zapewniając identyczną strukturę tabel u wszystkich członków zespołu.
-* **Komunikacja:** Mapowanie obiektowo-relacyjne (ORM) realizowane przez **Spring Data JPA / Hibernate**.
+### 3. Baza Danych (Model Gwiazdy + Moduł User)
+* **Technologia:** MariaDB zarządzana przez **Flyway**.
+* **Struktura:**
+  * **Użytkownicy:** Tabela `users` (id, username, password_hash).
+  * **Tabele Faktów:** `fact_test_results` (wyniki badań).
+  * **Tabele Wymiarów:** `dim_patient`, `dim_facility`, `dim_test_type`.
+  * **Historia:** `files_history` – **kluczowa relacja z `users`** (kolumna `user_id`), wskazująca, kto wgrał dany plik.
+  * **Błędy:** `processing_errors` – szczegółowe logi anomalii w plikach.
 
-## Przepływ Danych
+## Przepływ Danych i Bezpieczeństwo
 
-### Zarządzanie Bazą (Migracje)
-1. Podczas startu serwera Flyway sprawdza tabelę `flyway_schema_history`.
-2. Jeśli w folderze `db/migration` znajdują się nowe pliki (np. `V1`, `V2`), Flyway wykonuje je sekwencyjnie.
-3. Gwarantuje to, że baza danych `medicalytics` zawsze posiada aktualne tabele (np. `users`, `dim_patient`, `fact_test_results`).
+### Proces Autoryzacji
+1. Użytkownik loguje się przez Frontend.
+2. Backend sprawdza hash hasła w tabeli `users`.
+3. Po poprawnym zalogowaniu, ID użytkownika jest przypisywane do każdej sesji wgrywania pliku.
 
-### Proces Autoryzacji (Logowanie)
-1. Użytkownik wpisuje dane w oknie JavaFX.
-2. Frontend wysyła żądanie `POST` na endpoint `/api/auth/login`.
-3. `AuthController` wyszukuje użytkownika w bazie poprzez `UserRepository`.
-4. `BCryptPasswordEncoder` porównuje wpisane hasło (tekst jawny) z bezpiecznym hashem przechowywanym w kolumnie `password_hash`.
-5. Serwer zwraca informację o sukcesie lub błędzie, na podstawie której Frontend decyduje o zmianie widoku.
+### Proces CSV (ETL) z kontekstem użytkownika
+1. **Upload:** Plik trafia na serwer. W tabeli `files_history` powstaje wpis z przypisanym `user_id`.
+2. **Transformacja:** Dane są anonimizowane (PESEL -> Hash) i konwertowane na typy numeryczne.
+3. **Analiza:** System porównuje wyniki z normami i ustawia flagę `is_abnormal`.
+4. **Finalizacja:** Dane trafiają do tabel faktów, a użytkownik otrzymuje raport o sukcesach i błędach przetwarzania.
