@@ -28,6 +28,12 @@ public class FileController {
         this.fileHistoryRepository = fileHistoryRepository;
         this.csvProcessingService = csvProcessingService;
     }
+    // tu ja Natalia dodalam endpointa
+    @GetMapping
+    public ResponseEntity<Iterable<FileHistory>> getAllFiles() {
+        // Pobiera wszystkie rekordy z bazy, abyś mogła je wyświetlić na liście
+        return ResponseEntity.ok(fileHistoryRepository.findAll());
+    }
 
     // TYLKO WGRYWANIE NA SUCHO
     @PostMapping("/upload")
@@ -68,7 +74,8 @@ public class FileController {
 
     // NOWY ENDPOINT: WYWOŁANIE PRZETWARZANIA
     // tymczasoweo GET - tylko do testow!!!!! NATALKA TY ZROB FRONTEND PRZEZ PostMapping!!!!!!
-    @GetMapping("/{id}/process")
+  //tu Natalia zmienilam na Post
+    @PostMapping("/{id}/process")
     public ResponseEntity<String> processExistingFile(@PathVariable Long id) {
 
         // Szukamy pliku w bazie po ID

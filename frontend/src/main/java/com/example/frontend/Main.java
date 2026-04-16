@@ -12,6 +12,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
+import javafx.scene.control.ListView;
 
 import java.io.File;
 import java.net.URI;
@@ -123,35 +124,54 @@ public class Main extends Application {
         registerScene = new Scene(layout, 400, 400);
     }
     private void createDashboardScene() {
-        VBox layout = new VBox(20);
+        VBox layout = new VBox(15);
         layout.setPadding(new Insets(20));
         layout.setAlignment(Pos.CENTER);
         layout.setStyle("-fx-background-color: #FFF3E0;");
 
         Label welcomeLabel = new Label("Medicalytics - Panel");
         welcomeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        Label fileStatusLabel = new Label("Brak wybranych plików");
+        Label fileStatusLabel = new Label("Wybierz plik z listy");
 
-        Button uploadCsvButton = new Button("Upload data file (CSV)");
-        uploadCsvButton.setOnAction(e -> {
-            FileChooser fileChooser = new FileChooser();
-            // Filtrujemy tylko pliki CSV
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Pliki CSV", "*.csv"));
+        // LISTA PLIKÓW
+        ListView<FileItem> fileListView = new ListView<>();
+        fileListView.setPrefHeight(200);
 
-            File selectedFile = fileChooser.showOpenDialog(window);
+        // PRZYCISKI
+        Button refreshButton = new Button("Odśwież listę");
+        Button uploadButton = new Button("Wgraj nowy plik");
+        Button processButton = new Button("Przetwórz wybrany plik");
+        processButton.setDisable(true); // Domyślnie wyłączony!
 
-            if (selectedFile != null) {
-                fileStatusLabel.setText("Wysyłanie: " + selectedFile.getName() + "...");
-                // Wywołujemy nową metodę wysyłającą plik
-                sendCsvToBackend(selectedFile, fileStatusLabel);
+        // LOGIKA BLOKOWANIA PRZYCISKU
+        fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal != null && "UPLOADED".equals(newVal.status)) {
+                processButton.setDisable(false);
+            } else {
+                processButton.setDisable(true);
             }
         });
 
-        Button logoutButton = new Button("Wyloguj się");
+        // AKCJE
+        refreshButton.setOnAction(e -> fetchFiles(fileListView, fileStatusLabel));
+
+        uploadButton.setOnAction(e -> {
+            FileChooser fc = new FileChooser();
+            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV", "*.csv"));
+            File file = fc.showOpenDialog(window);
+            if (file != null) sendCsvToBackend(file, fileStatusLabel);
+        });
+
+        processButton.setOnAction(e -> {
+            FileItem selected = fileListView.getSelectionModel().getSelectedItem();
+            if (selected != null) processFileOnBackend(selected, fileStatusLabel, fileListView);
+        });
+
+        Button logoutButton = new Button("Wyloguj");
         logoutButton.setOnAction(e -> window.setScene(loginScene));
 
-        layout.getChildren().addAll(welcomeLabel, uploadCsvButton, fileStatusLabel, logoutButton);
-        dashboardScene = new Scene(layout, 500, 400);
+        layout.getChildren().addAll(welcomeLabel, refreshButton, fileListView, uploadButton, processButton, fileStatusLabel, logoutButton);
+        dashboardScene = new Scene(layout, 500, 600);
     }
 
     private void sendCsvToBackend(File file, Label statusLabel) {
@@ -223,5 +243,59 @@ public class Main extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+    private void fetchFiles(ListView<FileItem> listView, Label statusLabel) {
+        HttpClient client = HttpClient.newHttpClient();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/files"))
+                .GET().build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(res -> {
+                    Platform.runLater(() -> {
+                        if (res.statusCode() == 200) {
+                            // Używamy Gson do zamiany JSON na Listę FileItem
+                            com.google.gson.Gson gson = new com.google.gson.Gson();
+                            java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<java.util.List<FileItem>>(){}.getType();
+                            java.util.List<FileItem> files = gson.fromJson(res.body(), listType);
+                            listView.setItems(javafx.collections.FXCollections.observableArrayList(files));
+                            statusLabel.setText("Lista odświeżona.");
+                        }
+                    });
+                });
+    }
+
+    private void processFileOnBackend(FileItem item, Label statusLabel, ListView<FileItem> listView) {
+        HttpClient client = HttpClient.newHttpClient();
+        // Zmieniamy na POST i używamy ID w URL - dokładnie tak, jak zrobiłaś w Controllerze!
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/files/" + item.id + "/process"))
+                .POST(HttpRequest.BodyPublishers.noBody())
+                .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(res -> {
+                    Platform.runLater(() -> {
+                        // Wyświetlamy Alert z wynikiem (wymaganie funkcjonalne)
+                        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
+                        alert.setTitle("Wynik przetwarzania");
+                        alert.setHeaderText(null);
+                        alert.setContentText(res.body());
+                        alert.showAndWait();
+
+                        // Odświeżamy listę, żeby zobaczyć nowy status (np. SUCCESS)
+                        fetchFiles(listView, statusLabel);
+                    });
+                });
+    }
+}
+class FileItem {
+    Long id;
+    String fileName; // Musi być fileName (zgodnie z backendem)
+    String status;
+
+    @Override
+    public String toString() {
+        return fileName + " [" + status + "]";
     }
 }
