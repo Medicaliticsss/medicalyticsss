@@ -1,0 +1,7 @@
+imie,nazwisko,data_urodzenia,plec,pesel,placowka_nazwa,miasto,kod_badania,nazwa_badania,wynik,jednostka,norma_min,norma_max
+Test,MinCase,1990-01-01,M,90010112345,Lab Test,Warszawa,GLU,Glukoza,70.0,mg/dL,70.0,99.0
+Test,MaxCase,1990-01-01,F,90010112346,Lab Test,Warszawa,GLU,Glukoza,99.0,mg/dL,70.0,99.0
+Test,BelowMin,1990-01-01,M,90010112347,Lab Test,Warszawa,GLU,Glukoza,69.9,mg/dL,70.0,99.0
+Test,AboveMax,1990-01-01,F,90010112348,Lab Test,Warszawa,GLU,Glukoza,99.1,mg/dL,70.0,99.0
+Test,ExtremeHigh,1990-01-01,M,90010112349,Lab Test,Warszawa,CHOL,Cholesterol,9999.9,mg/dL,115.0,190.0
+Test,ExtremeLow,1990-01-01,F,90010112350,Lab Test,Warszawa,HGB,Hemoglobina,-5.0,g/dL,13.0,17.0
