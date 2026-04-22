@@ -80,6 +80,17 @@ Moduł obsługujący procesy hurtowni danych (Extract, Transform, Load) oraz bez
     - Aktualizuje finalny status pliku (`SUCCESS`, `PARTIAL_SUCCESS` lub `ERROR`).
 * **Odpowiedź:** `200 OK` (`"Proces przetwarzania zakończony. Sprawdź status pliku."`)
 
+#### Pobieranie listy plików
+* **URL:** `/api/files`
+* **Metoda:** `GET`
+* **Działanie:** - Odpytuje bazę danych o wszystkie rekordy zarejestrowane w tabeli files_history.
+    -Pobiera metadane plików, w tym ich unikalne identyfikatory, oryginalne nazwy oraz przypisane stany.
+    -Mapuje dane na format JSON, przesyłając kluczowe pola: id, fileName oraz status.
+    -Służy jako główne źródło danych dla interfejsu użytkownika (zasilanie komponentu ListView).
+    -Umożliwia weryfikację bieżącego etapu cyklu życia pliku (od przesłania, przez przetwarzanie, aż po ewentualne oznaczenie jako usunięty).
+
+* **Odpowiedź:** `200 OK` (`Zwraca listę obiektów JSON, np. [{"id": 1, "fileName": "dane.csv", "status": "UPLOADED"}]`)
+
 #### Wymagana Struktura Pliku CSV
 Aby walidator poprawnie przetworzył plik, musi on zawierać wartości oddzielone przecinkami (pierwszy wiersz z nagłówkami jest ignorowany) w dokładnie takiej kolejności:
 `imie, nazwisko, data_urodzenia, plec, pesel, placowka_nazwa, miasto, kod_badania, nazwa_badania, wynik, jednostka, norma_min, norma_max`
