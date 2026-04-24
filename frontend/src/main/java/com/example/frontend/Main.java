@@ -137,22 +137,27 @@ public class Main extends Application {
         ListView<FileItem> fileListView = new ListView<>();
         fileListView.setPrefHeight(200);
 
-        // PRZYCISKI
+        // PRZYCISKI - tworzymy je wszystkie na początku
         Button refreshButton = new Button("Odśwież listę");
         Button uploadButton = new Button("Wgraj nowy plik");
         Button processButton = new Button("Przetwórz wybrany plik");
-        processButton.setDisable(true); // Domyślnie wyłączony!
+        processButton.setDisable(true);
 
-        // LOGIKA BLOKOWANIA PRZYCISKU
+        Button deleteButton = new Button("Usuń plik");
+        deleteButton.setStyle("-fx-background-color: #d9534f; -fx-text-fill: white; -fx-font-weight: bold;");
+        deleteButton.setDisable(true);
+
+        Button logoutButton = new Button("Wyloguj"); // Przeniesione wyżej, żeby było widać zmienną
+
+        // POŁĄCZONA LOGIKA BLOKOWANIA (Jeden listener, żeby panował porządek)
         fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            if (newVal != null && "UPLOADED".equals(newVal.status)) {
-                processButton.setDisable(false);
-            } else {
-                processButton.setDisable(true);
-            }
+            boolean isSelected = (newVal != null);
+            deleteButton.setDisable(!isSelected);
+            // Przetwarzać można tylko pliki ze statusem UPLOADED
+            processButton.setDisable(!isSelected || !"UPLOADED".equals(newVal.status));
         });
 
-        // AKCJE
+        // AKCJE PRZYCISKÓW
         refreshButton.setOnAction(e -> fetchFiles(fileListView, fileStatusLabel));
 
         uploadButton.setOnAction(e -> {
@@ -167,10 +172,16 @@ public class Main extends Application {
             if (selected != null) processFileOnBackend(selected, fileStatusLabel, fileListView);
         });
 
-        Button logoutButton = new Button("Wyloguj");
+        deleteButton.setOnAction(e -> {
+            FileItem selected = fileListView.getSelectionModel().getSelectedItem();
+            if (selected != null) deleteFileOnBackend(selected, fileStatusLabel, fileListView);
+        });
+
         logoutButton.setOnAction(e -> window.setScene(loginScene));
 
-        layout.getChildren().addAll(welcomeLabel, refreshButton, fileListView, uploadButton, processButton, fileStatusLabel, logoutButton);
+        // JEDNO DODANIE WSZYSTKIEGO DO LAYOUTU
+        layout.getChildren().addAll(welcomeLabel, refreshButton, fileListView, uploadButton, processButton, deleteButton, fileStatusLabel, logoutButton);
+
         dashboardScene = new Scene(layout, 500, 600);
     }
 
@@ -258,6 +269,9 @@ public class Main extends Application {
                             com.google.gson.Gson gson = new com.google.gson.Gson();
                             java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<java.util.List<FileItem>>(){}.getType();
                             java.util.List<FileItem> files = gson.fromJson(res.body(), listType);
+
+                            files.removeIf(f -> "DELETED".equals(f.status));
+
                             listView.setItems(javafx.collections.FXCollections.observableArrayList(files));
                             statusLabel.setText("Lista odświeżona.");
                         }
@@ -286,6 +300,29 @@ public class Main extends Application {
                         // Odświeżamy listę, żeby zobaczyć nowy status (np. SUCCESS)
                         fetchFiles(listView, statusLabel);
                     });
+                });
+    }
+    private void deleteFileOnBackend(FileItem item, Label statusLabel, ListView<FileItem> listView) {
+        HttpClient client = HttpClient.newHttpClient();
+        // Adres URL zgodny z planem Twojego kolegi
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/files/" + item.id + "/delete"))
+                .POST(HttpRequest.BodyPublishers.noBody()) // Używamy POST, bo zmieniamy status w bazie
+                .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(res -> {
+                    Platform.runLater(() -> {
+                        if (res.statusCode() == 200) {
+                            statusLabel.setText("Plik został usunięty.");
+                            fetchFiles(listView, statusLabel); // Odświeżamy listę, żeby plik zniknął
+                        } else {
+                            statusLabel.setText("Błąd: " + res.body());
+                        }
+                    });
+                }).exceptionally(ex -> {
+                    Platform.runLater(() -> statusLabel.setText("Błąd połączenia: " + ex.getMessage()));
+                    return null;
                 });
     }
 }
