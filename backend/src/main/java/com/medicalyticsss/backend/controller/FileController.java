@@ -28,10 +28,12 @@ public class FileController {
         this.fileHistoryRepository = fileHistoryRepository;
         this.csvProcessingService = csvProcessingService;
     }
+
     // tu ja Natalia dodalam endpointa
     @GetMapping
     public ResponseEntity<Iterable<FileHistory>> getAllFiles() {
-        // Pobiera wszystkie rekordy z bazy, abyś mogła je wyświetlić na liście
+        // Pobiera wszystkie rekordy z bazy. Frontend sam zadba o to, żeby
+        // nie wyświetlać użytkownikowi plików ze statusem DELETED.
         return ResponseEntity.ok(fileHistoryRepository.findAll());
     }
 
@@ -73,8 +75,7 @@ public class FileController {
     }
 
     // NOWY ENDPOINT: WYWOŁANIE PRZETWARZANIA
-    // tymczasoweo GET - tylko do testow!!!!! NATALKA TY ZROB FRONTEND PRZEZ PostMapping!!!!!!
-  //tu Natalia zmienilam na Post
+    // tu Natalia zmienilam na Post
     @PostMapping("/{id}/process")
     public ResponseEntity<String> processExistingFile(@PathVariable Long id) {
 
@@ -96,7 +97,7 @@ public class FileController {
             // Znajdujemy ścieżkę do pliku na dysku
             Path filePath = Paths.get(uploadDir).toAbsolutePath().normalize().resolve(history.getFileName());
 
-            // Odpala
+            // Odpala przetwarzanie
             csvProcessingService.processFile(history, filePath);
 
             return ResponseEntity.ok("Proces przetwarzania zakończony. Sprawdź status pliku.");
@@ -104,6 +105,22 @@ public class FileController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Błąd podczas przetwarzania: " + e.getMessage());
+        }
+    }
+
+    // --- NOWY ENDPOINT: SOFT DELETE I ROLLBACK ---
+    @PostMapping("/{id}/delete")
+    public ResponseEntity<String> deleteFile(@PathVariable Long id) {
+        try {
+            // Wywołujemy przygotowaną logikę czyszczenia danych i zmiany statusu
+            csvProcessingService.softDeleteAndRollback(id);
+            return ResponseEntity.ok("Plik pomyślnie usunięty, a dane zrolowane.");
+        } catch (IllegalArgumentException e) {
+            // Zwracamy kod 404 Not Found, jeśli ID pliku nie istnieje
+            return ResponseEntity.status(404).body("Błąd: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Wystąpił błąd podczas usuwania pliku: " + e.getMessage());
         }
     }
 }
