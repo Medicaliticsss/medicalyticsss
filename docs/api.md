@@ -65,16 +65,16 @@ Moduł obsługujący procesy hurtowni danych (Extract, Transform, Load) oraz bez
 * **Typ zawartości:** `multipart/form-data`
 * **Parametry:** `file` (wymagany plik z rozszerzeniem .csv)
 * **Działanie:** * Zapisuje plik fizycznie w folderze `uploads/`.
-    * **Obsługa kolizji:** Jeśli plik o danej nazwie istnieje, serwer automatycznie inkrementuje nazwę (np. `plik(1).csv`), zapobiegając nadpisaniu danych na dysku.
-    * Tworzy rekord w `files_history` ze statusem `UPLOADED` oraz zapisuje dokładny czas operacji (`uploadTime`). Przypisuje plik do zalogowanego użytkownika.
+  * **Obsługa kolizji:** Jeśli plik o danej nazwie istnieje, serwer automatycznie inkrementuje nazwę (np. `plik(1).csv`), zapobiegając nadpisaniu danych na dysku.
+  * Tworzy rekord w `files_history` ze statusem `UPLOADED` oraz zapisuje dokładny czas operacji (`uploadTime`). Przypisuje plik do zalogowanego użytkownika.
 * **Odpowiedź:** `200 OK` (informacja o pomyślnym wgraniu i wygenerowanej nazwie).
 
 #### Pobieranie listy plików
 * **URL:** `/api/files`
 * **Metoda:** `GET`
 * **Działanie:** * Odpytuje bazę danych o wszystkie rekordy zarejestrowane w tabeli `files_history`.
-    * Mapuje dane na format JSON, przesyłając kluczowe pola: `id`, `fileName`, `status` oraz `uploadTime`.
-    * Służy jako główne źródło danych dla interfejsu użytkownika (zasilanie komponentu ListView). Aplikacja frontendowa filtruje pliki ze statusem `DELETED`.
+  * Mapuje dane na format JSON, przesyłając kluczowe pola: `id`, `fileName`, `status` oraz `uploadTime`.
+  * Służy jako główne źródło danych dla interfejsu użytkownika (zasilanie komponentu ListView). Aplikacja frontendowa filtruje pliki ze statusem `DELETED`.
 * **Odpowiedź:** `200 OK` (Zwraca listę JSON, np. `[{"id": 1, "fileName": "dane.csv", "status": "UPLOADED", "uploadTime": "2026-04-26T14:05:30.123"}]`).
 
 #### Podgląd zawartości pliku (Preview)
@@ -89,12 +89,12 @@ Moduł obsługujący procesy hurtowni danych (Extract, Transform, Load) oraz bez
 * **Metoda:** `POST`
 * **Parametr URL:** `{id}` - ID pliku z tabeli `files_history`.
 * **Działanie:** * Czyta wgrany plik wiersz po wierszu.
-    * Zabezpiecza wrażliwe dane: zamienia PESEL na skrót SHA-256.
-    * Realizuje operacje "Upsert" na wymiarach: wyszukuje lub tworzy pacjentów (`dim_patient`), placówki (`dim_facility`) i słowniki badań (`dim_test_type`).
-    * Waliduje typy liczbowe (zamiana `,` na `.`, precyzja `BigDecimal`).
-    * Przelicza odchylenia od norm medycznych i ustawia flagę `is_abnormal`.
-    * Sukcesy dopisuje do tabeli `fact_test_results`, a anomalie odrzuca do tabeli `processing_errors`.
-    * Aktualizuje finalny status pliku (`SUCCESS`, `PARTIAL_SUCCESS` lub `ERROR`).
+  * Zabezpiecza wrażliwe dane: zamienia PESEL na skrót SHA-256.
+  * Realizuje operacje "Upsert" na wymiarach: wyszukuje lub tworzy pacjentów (`dim_patient`), placówki (`dim_facility`) i słowniki badań (`dim_test_type`).
+  * Waliduje typy liczbowe (zamiana `,` na `.`, precyzja `BigDecimal`).
+  * Przelicza odchylenia od norm medycznych i ustawia flagę `is_abnormal`.
+  * Sukcesy dopisuje do tabeli `fact_test_results`, a anomalie odrzuca do tabeli `processing_errors`.
+  * Aktualizuje finalny status pliku (`SUCCESS`, `PARTIAL_SUCCESS` lub `ERROR`).
 * **Odpowiedź:** `200 OK` (`"Proces przetwarzania zakończony. Sprawdź status pliku."`)
 
 #### Miękkie usuwanie pliku i Rollback
@@ -103,6 +103,17 @@ Moduł obsługujący procesy hurtowni danych (Extract, Transform, Load) oraz bez
 * **Parametr URL:** `{id}` - ID pliku z tabeli `files_history`.
 * **Działanie:** Zmienia status rekordu w `files_history` na `DELETED` (Soft Delete). Wykonuje Rollback, czyli kasuje wszystkie powiązane rekordy z tabel faktycznych (`fact_test_results`) oraz błędów (`processing_errors`), zachowując przy tym dane słownikowe w tabelach wymiarów.
 * **Odpowiedź:** `200 OK` (`"Plik pomyślnie usunięty, a dane zrolowane."`)
+
+---
+
+### Moduł Raportów i Statystyk (`/api/reports`)
+Moduł agregujący zanonimizowane dane medyczne w celu zasilania wykresów i kart KPI w aplikacji klienckiej.
+
+#### Podsumowanie globalne (MVP)
+* **URL:** `/api/reports/summary`
+* **Metoda:** `GET`
+* **Działanie:** Wykonuje szybkie zapytania agregujące (`COUNT`) na poziomie bazy danych w tabeli `fact_test_results`. Zlicza łączną liczbę wykonanych badań oraz proporcje wyników mieszczących się w normie w stosunku do wykrytych anomalii medycznych.
+* **Odpowiedź:** `200 OK` (Zwraca obiekt JSON z podsumowaniem, np. `{"totalTests": 1500, "normalResults": 1350, "abnormalResults": 150}`).
 
 ---
 
