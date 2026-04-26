@@ -1,0 +1,54 @@
+### 1. Zarejestruj użytkownika (jeśli masz czystą bazę)
+POST http://localhost:8080/api/auth/register
+Content-Type: application/x-www-form-urlencoded
+
+username=szymon&password=123
+
+> {%
+    client.test("Rejestracja", function() {
+        client.assert(response.status === 200 || response.status === 400, "Zwrócono zły kod");
+    });
+%}
+
+### 2. Zaloguj się (Otwarcie sesji)
+POST http://localhost:8080/api/auth/login
+Content-Type: application/x-www-form-urlencoded
+
+username=szymon&password=123
+
+> {%
+    client.test("Logowanie i Ciasteczko", function() {
+        client.assert(response.status === 200, "Logowanie nie powiodło się");
+        // Sprawdzamy czy serwer wysłał ciasteczko JSESSIONID
+        client.assert(response.headers.valueOf("Set-Cookie").includes("JSESSIONID"), "Brak ciasteczka sesyjnego!");
+    });
+%}
+
+### 3. Sprawdź, kim jesteś (Weryfikacja sesji)
+# Serwer musi nas rozpoznać po ciasteczku.
+GET http://localhost:8080/api/auth/me
+
+> {%
+    client.test("Weryfikacja tożsamości", function() {
+        client.assert(response.status === 200, "Serwer mnie nie rozpoznał (błąd sesji)!");
+    });
+%}
+
+### 4. Wyloguj się (Zamknięcie sesji)
+POST http://localhost:8080/api/auth/logout
+
+> {%
+    client.test("Wylogowanie", function() {
+        client.assert(response.status === 200, "Błąd wylogowania");
+    });
+%}
+
+### 5. Ponownie sprawdź, kim jesteś (Test wygasłej sesji)
+# To powinno zwrócić błąd 401.
+GET http://localhost:8080/api/auth/me
+
+> {%
+    client.test("Brak dostępu po wylogowaniu", function() {
+        client.assert(response.status === 401, "Serwer nadal mnie pamięta! (Błąd)");
+    });
+%}
