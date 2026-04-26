@@ -216,4 +216,23 @@ public class CsvProcessingService {
         error.setRawLineData(record.toString());
         errorRepository.save(error);
     }
+
+    @Transactional
+    public void softDeleteAndRollback(Long fileId) {
+        // 1. Szukamy pliku w bazie
+        FileHistory fileHistory = fileHistoryRepository.findById(fileId)
+                .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono pliku o ID: " + fileId));
+
+        // 2. Rollback - usuwamy powiązane rekordy (Błędy i Wyniki badań)
+        errorRepository.deleteByFileHistoryId(fileId);
+        factTestResultRepository.deleteByFileHistoryId(fileId);
+
+        // 3. Zmiana statusu na DELETED (Miękkie usuwanie) i zerowanie liczników
+        fileHistory.setStatus(FileStatus.DELETED);
+        fileHistory.setSuccessCount(0);
+        fileHistory.setErrorCount(0);
+
+        // 4. Zapisujemy zaktualizowaną historię pliku
+        fileHistoryRepository.save(fileHistory);
+    }
 }

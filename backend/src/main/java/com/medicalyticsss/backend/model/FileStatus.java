@@ -4,5 +4,6 @@ public enum FileStatus {
     UPLOADED,
     SUCCESS,
     PARTIAL_SUCCESS,
-    ERROR
+    ERROR,
+    DELETED
 }
