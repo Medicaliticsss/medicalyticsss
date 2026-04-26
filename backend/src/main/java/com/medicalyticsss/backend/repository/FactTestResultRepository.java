@@ -11,4 +11,5 @@ public interface FactTestResultRepository extends JpaRepository<FactTestResult, 
     @Modifying
     @Query("DELETE FROM FactTestResult f WHERE f.fileHistory.id = :fileId")
     void deleteByFileHistoryId(@Param("fileId") Long fileId);
+    long countByIsAbnormal(boolean isAbnormal);
 }
