@@ -53,12 +53,25 @@ public class FileController {
         try {
             Path copyLocation = Paths.get(uploadDir).toAbsolutePath().normalize();
             Files.createDirectories(copyLocation);
-            Path targetLocation = copyLocation.resolve(originalFileName);
 
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            int dotIndex = originalFileName.lastIndexOf('.');
+            String baseName = originalFileName.substring(0, dotIndex);
+            String extension = originalFileName.substring(dotIndex);
+
+            String finalFileName = originalFileName;
+            Path targetLocation = copyLocation.resolve(finalFileName);
+            int counter = 1;
+
+            while (Files.exists(targetLocation)) {
+                finalFileName = baseName + "(" + counter + ")" + extension;
+                targetLocation = copyLocation.resolve(finalFileName);
+                counter++;
+            }
+
+            Files.copy(file.getInputStream(), targetLocation);
 
             FileHistory history = new FileHistory();
-            history.setFileName(originalFileName);
+            history.setFileName(finalFileName);
             history.setUploadTime(LocalDateTime.now());
             history.setStatus(FileStatus.UPLOADED); // Zostaje w statusie UPLOADED
             history.setSuccessCount(0);
@@ -66,7 +79,7 @@ public class FileController {
 
             fileHistoryRepository.save(history);
 
-            return ResponseEntity.ok("Plik '" + originalFileName + "' został pomyślnie wgrany na serwer.");
+            return ResponseEntity.ok("Plik '" + finalFileName + "' został pomyślnie wgrany na serwer.");
 
         } catch (Exception e) {
             e.printStackTrace();
