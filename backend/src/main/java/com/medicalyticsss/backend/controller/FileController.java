@@ -87,7 +87,7 @@ public class FileController {
         }
     }
 
-    // NOWY ENDPOINT: WYWOŁANIE PRZETWARZANIA
+    // WYWOŁANIE PRZETWARZANIA
     // tu Natalia zmienilam na Post
     @PostMapping("/{id}/process")
     public ResponseEntity<String> processExistingFile(@PathVariable Long id) {
@@ -121,7 +121,7 @@ public class FileController {
         }
     }
 
-    // --- NOWY ENDPOINT: SOFT DELETE I ROLLBACK ---
+    // SOFT DELETE I ROLLBACK
     @PostMapping("/{id}/delete")
     public ResponseEntity<String> deleteFile(@PathVariable Long id) {
         try {
@@ -134,6 +134,39 @@ public class FileController {
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Wystąpił błąd podczas usuwania pliku: " + e.getMessage());
+        }
+    }
+
+    // PODGLĄD PLIKU (PREVIEW)
+    @GetMapping("/{id}/preview")
+    public ResponseEntity<?> previewFile(@PathVariable Long id, @RequestParam(defaultValue = "50") int limit) {
+        // Szukamy historii pliku w bazie
+        Optional<FileHistory> fileHistoryOpt = fileHistoryRepository.findById(id);
+
+        if (fileHistoryOpt.isEmpty()) {
+            return ResponseEntity.status(404).body("Błąd: Nie znaleziono pliku o ID " + id);
+        }
+
+        FileHistory history = fileHistoryOpt.get();
+
+        // Szukamy pliku na dysku
+        Path filePath = Paths.get(uploadDir).toAbsolutePath().normalize().resolve(history.getFileName());
+
+        if (!Files.exists(filePath)) {
+            return ResponseEntity.status(404).body("Błąd: Fizyczny plik nie istnieje na serwerze.");
+        }
+
+        // Strumieniowe czytanie pliku
+        try (java.util.stream.Stream<String> lines = Files.lines(filePath, java.nio.charset.StandardCharsets.UTF_8)) {
+            // Pobieramy tylko 'limit' pierwszych linii (domyślnie 50) i pakujemy do listy
+            java.util.List<String> previewLines = lines.limit(limit).collect(java.util.stream.Collectors.toList());
+
+            // Zwracamy listę wierszy w formacie JSON
+            return ResponseEntity.ok(previewLines);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.status(500).body("Błąd podczas odczytu pliku: " + e.getMessage());
         }
     }
 }
