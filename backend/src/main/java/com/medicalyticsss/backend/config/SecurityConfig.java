@@ -3,10 +3,10 @@ package com.medicalyticsss.backend.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.config.Customizer;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfig {
@@ -17,11 +17,20 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Wyłącza ochronę CSRF, żeby pozwolić na POST z testów HTTP
+                // 1. Wyłączone CSRF
+                .csrf(csrf -> csrf.disable())
+
+                // 2. Definiujemy dostęp do endpointów
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll() // NA RAZIE!!! pozwalamy każdemu na wszystko
+                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll() // Otwarte dla wszystkich
+                        .anyRequest().authenticated() // Wszystkie inne wymagają sesji
+                )
+
+                // 3. Konfiguracja zarządzania sesją
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED) // Twórz sesję tylko gdy potrzebna
                 );
 
         return http.build();
