@@ -6,6 +6,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
@@ -22,7 +23,7 @@ import javafx.scene.paint.Color;
 
 public class Main extends Application {
     Stage window;
-    Scene loginScene, registerScene, dashboardScene;
+    Scene loginScene, registerScene, dashboardScene, mainMenuScene, settingsScene, reportScene;
     ListView<FileItem> fileListView;
     Label fileStatusLabel;
 
@@ -36,6 +37,9 @@ public class Main extends Application {
         createLoginScene();
         createRegisterScene();
         createDashboardScene();
+        createMainMenuScene();
+        createReportScene();
+        createSettingsScene();
 
         window.setScene(loginScene);
         window.show();
@@ -82,8 +86,7 @@ public class Main extends Application {
                             String responseBody = response.body();
                             if (responseBody.equals("Zalogowano pomyślnie!")) {
                                 fetchFiles(fileListView, fileStatusLabel);
-                                window.setScene(dashboardScene);
-                                window.getHeight();
+                                window.setScene(mainMenuScene);
                                 window.setMaximized(false);
                                 window.setMaximized(true);
                             } else {
@@ -98,7 +101,6 @@ public class Main extends Application {
         registerButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
         registerButton.setOnAction(e -> {
             window.setScene(registerScene);
-            window.getHeight();
             window.setMaximized(false);
             window.setMaximized(true);
         });
@@ -172,13 +174,140 @@ public class Main extends Application {
         backButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
         backButton.setOnAction(e -> {
             window.setScene(loginScene);
-            window.getHeight();
             window.setMaximized(false);
             window.setMaximized(true);
         });
 
         layout.getChildren().addAll(titleLabel, usernameInput, passwordInput, confirmPasswordInput, registerButton, backButton, statusLabel);
         registerScene = new Scene(layout, 400, 550);
+    }
+    private void createMainMenuScene() {
+        BorderPane root = new BorderPane();
+        root.setPadding(new Insets(40));
+        Label titleLabel = new Label("Główne Menu");
+        titleLabel.getStyleClass().add(Styles.TITLE_1);
+        titleLabel.setStyle("-fx-text-fill: #FF0055; -fx-font-weight: bold;");
+        DropShadow neonGlow = new DropShadow();
+        neonGlow.setColor(Color.web("#FF0055"));
+        titleLabel.setEffect(neonGlow);
+        Button logoutButton = new Button("Wyloguj");
+        logoutButton.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.DANGER);
+        logoutButton.setStyle("-fx-cursor: hand;");
+        logoutButton.setOnAction(e -> {
+            window.setScene(loginScene);
+            window.setMaximized(false);
+            window.setMaximized(true);
+        });
+        javafx.scene.layout.StackPane topContainer = new javafx.scene.layout.StackPane();
+        topContainer.setPadding(new Insets(10, 0, 40, 0));
+        topContainer.getChildren().addAll(titleLabel, logoutButton);
+        javafx.scene.layout.StackPane.setAlignment(logoutButton, Pos.CENTER_RIGHT);
+        root.setTop(topContainer);
+        javafx.scene.layout.HBox cardsContainer = new javafx.scene.layout.HBox(60);
+        cardsContainer.setAlignment(Pos.CENTER);
+        cardsContainer.setPadding(new Insets(0, 60, 0, 60));
+        Button filesButton = createMenuCard("Pliki");
+        Button reportsButton = createMenuCard("Raporty");
+        Button settingsButton = createMenuCard("Ustawienia");
+        //szerokość i wysokość- 1/3 ekaranu
+        filesButton.prefHeightProperty().bind(root.heightProperty().divide(3));
+        filesButton.prefWidthProperty().bind(root.heightProperty().divide(3));
+        reportsButton.prefHeightProperty().bind(root.heightProperty().divide(3));
+        reportsButton.prefWidthProperty().bind(root.heightProperty().divide(3));
+        settingsButton.prefHeightProperty().bind(root.heightProperty().divide(3));
+        settingsButton.prefWidthProperty().bind(root.heightProperty().divide(3));
+        filesButton.setOnAction(e -> {
+            window.setScene(dashboardScene);
+            window.getHeight();
+            window.setMaximized(false);
+            window.setMaximized(true);
+        });
+        reportsButton.setOnAction(e -> {
+            window.setScene(reportScene);
+            window.getHeight();
+            window.setMaximized(false);
+            window.setMaximized(true);
+        });
+        settingsButton.setOnAction(e -> {
+            window.setScene(settingsScene);
+            window.getHeight();
+            window.setMaximized(false);
+            window.setMaximized(true);
+        });
+
+        cardsContainer.getChildren().addAll(filesButton, reportsButton, settingsButton);
+        root.setCenter(cardsContainer);
+
+        javafx.scene.layout.HBox bottomBar = new javafx.scene.layout.HBox();
+        bottomBar.setMinHeight(30);
+        bottomBar.setStyle("-fx-background-color: #444444; -fx-background-radius: 10;");
+
+        VBox bottomContainer = new VBox(bottomBar);
+        bottomContainer.setPadding(new Insets(50, 0, 10, 0)); // Odstęp od kafelków
+        root.setBottom(bottomContainer);
+
+        mainMenuScene = new Scene(root, 1000, 700);
+    }
+    private void createReportScene() {
+        VBox root = new VBox(40);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(50));
+        Label label = new Label("TU BĘDĄ RAPORTY");
+        label.getStyleClass().add(Styles.TITLE_1);
+        label.setStyle("-fx-text-fill: #FF0055; -fx-font-weight: bold; -fx-font-size: 50px;");
+        DropShadow neon = new DropShadow();
+        neon.setColor(Color.web("#FF0055"));
+        label.setEffect(neon);
+        Button backButton = new Button("Wróć do Menu");
+        backButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
+        backButton.setOnAction(e -> {
+            window.setScene(mainMenuScene);
+            window.getHeight();
+            window.setMaximized(false);
+            window.setMaximized(true);
+        });
+
+        root.getChildren().addAll(label, backButton);
+        reportScene = new Scene(root, 1280, 720);
+    }
+
+    private void createSettingsScene() {
+        VBox root = new VBox(40);
+        root.setAlignment(Pos.CENTER);
+        root.setPadding(new Insets(50));
+        Label label = new Label("TU BĘDĄ USTAWIENIA");
+        label.getStyleClass().add(Styles.TITLE_1);
+        label.setStyle("-fx-text-fill: #FF0055; -fx-font-weight: bold; -fx-font-size: 50px;");
+        DropShadow neon = new DropShadow();
+        neon.setColor(Color.web("#FF0055"));
+        label.setEffect(neon);
+        Button backButton = new Button("Wróć do Menu");
+        backButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
+        backButton.setOnAction(e -> {
+            window.setScene(mainMenuScene);
+            window.getHeight();
+            window.setMaximized(false);
+            window.setMaximized(true);
+        });
+
+        root.getChildren().addAll(label, backButton);
+        settingsScene = new Scene(root, 1280, 720);
+    }
+    // Metoda pomocnicza do generowania spójnych kafelków
+    private Button createMenuCard(String text) {
+        Button card = new Button(text);
+        card.getStyleClass().addAll(Styles.ELEVATED_2, Styles.TITLE_3);
+        card.setStyle(
+                "-fx-background-color: #2D2D30; " +
+                        "-fx-background-radius: 15; " +
+                        "-fx-text-alignment: center; " +
+                        "-fx-cursor: hand;"
+        );
+
+        card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #3E3E42; -fx-background-radius: 15; -fx-text-alignment: center; -fx-cursor: hand;"));
+        card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #2D2D30; -fx-background-radius: 15; -fx-text-alignment: center; -fx-cursor: hand;"));
+
+        return card;
     }
 
     private void createDashboardScene() {
@@ -206,15 +335,15 @@ public class Main extends Application {
         deleteButton.getStyleClass().add(Styles.DANGER);
         deleteButton.setDisable(true);
 
-        Button logoutButton = new Button("Wyloguj");
-        logoutButton.getStyleClass().add(Styles.FLAT);
+        Button backButton = new Button("Wróć do menu");
+        backButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
 
         double btnWidth = 300;
         refreshButton.setMinWidth(btnWidth);
         uploadButton.setMinWidth(btnWidth);
         processButton.setMinWidth(btnWidth);
         deleteButton.setMinWidth(btnWidth);
-        logoutButton.setMinWidth(btnWidth);
+        backButton.setMinWidth(btnWidth);
 
         fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
             boolean isSelected = (newVal != null);
@@ -273,14 +402,13 @@ public class Main extends Application {
             }
         });
 
-        logoutButton.setOnAction(e -> {
-            window.setScene(loginScene);
-            window.getHeight();
+        backButton.setOnAction(e -> {
+            window.setScene(mainMenuScene);
             window.setMaximized(false);
             window.setMaximized(true);
         });
 
-        layout.getChildren().addAll(welcomeLabel, refreshButton, fileListView, uploadButton, processButton, deleteButton, fileStatusLabel, logoutButton);
+        layout.getChildren().addAll(welcomeLabel, refreshButton, fileListView, uploadButton, processButton, deleteButton, fileStatusLabel, backButton);
         dashboardScene = new Scene(layout);
     }
 
