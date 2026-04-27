@@ -24,6 +24,9 @@ public class Main extends Application {
     //główne okno i 3 sceny
     Stage window;
     Scene loginScene, registerScene, dashboardScene;
+    private final HttpClient client = HttpClient.newBuilder()
+            .cookieHandler(new java.net.CookieManager())
+            .build();
 
     private void createLoginScene() {
         VBox layout = new VBox(15);
@@ -43,7 +46,7 @@ public class Main extends Application {
         //przycisk logowania
         Button loginButton = new Button("Zaloguj się");
         loginButton.setOnAction(e -> {
-            HttpClient client = HttpClient.newHttpClient();
+
             String formBody = "username=" + usernameInput.getText() + "&password=" + passwordInput.getText();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("http://localhost:8080/api/auth/login")) // Dobry URL
@@ -102,7 +105,7 @@ public class Main extends Application {
                 statusLabel.setText("Hasła nie są takie same!");
                 return;
             }
-            HttpClient client = HttpClient.newHttpClient();
+
             String formBody = "username=" + username + "&password=" + password;
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("http://localhost:8080/api/auth/register"))
@@ -124,71 +127,85 @@ public class Main extends Application {
         registerScene = new Scene(layout, 400, 400);
     }
     private void createDashboardScene() {
-        VBox layout = new VBox(15);
-        layout.setPadding(new Insets(20));
-        layout.setAlignment(Pos.CENTER);
-        layout.setStyle("-fx-background-color: #FFF3E0;");
+        javafx.scene.layout.HBox mainLayout = new javafx.scene.layout.HBox(20);
+        mainLayout.setPadding(new Insets(20));
+        mainLayout.setAlignment(Pos.CENTER); // Wyśrodkowanie paneli
+        mainLayout.setStyle("-fx-background-color: #FFF3E0;");
 
-        Label welcomeLabel = new Label("Medicalytics - Panel");
-        welcomeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold;");
-        Label fileStatusLabel = new Label("Wybierz plik z listy");
+        // LEWY PANEL
+        VBox previewPanel = new VBox(10);
+        Label previewLabel = new Label("Podgląd zawartości pliku:");
+        previewLabel.setStyle("-fx-font-weight: bold;");
+        javafx.scene.control.TextArea previewArea = new javafx.scene.control.TextArea();
+        previewArea.setEditable(false);
+        previewArea.setPrefWidth(450); // Trochę szerzej dla wygody
+        previewArea.setPrefHeight(500);
+        previewPanel.getChildren().addAll(previewLabel, previewArea);
 
-        // LISTA PLIKÓW
+        // PRAWY PANEL
+        VBox controlPanel = new VBox(10);
+        controlPanel.setMinWidth(250); // Stała szerokość panelu sterowania
+
         ListView<FileItem> fileListView = new ListView<>();
         fileListView.setPrefHeight(200);
 
-        // PRZYCISKI - tworzymy je wszystkie na początku
         Button refreshButton = new Button("Odśwież listę");
         Button uploadButton = new Button("Wgraj nowy plik");
-        Button processButton = new Button("Przetwórz wybrany plik");
-        processButton.setDisable(true);
-
+        Button processButton = new Button("Przetwórz plik");
+        Button previewButton = new Button("Podgląd");
         Button deleteButton = new Button("Usuń plik");
-        deleteButton.setStyle("-fx-background-color: #d9534f; -fx-text-fill: white; -fx-font-weight: bold;");
-        deleteButton.setDisable(true);
+        Button logoutButton = new Button("Wyloguj");
+        Label fileStatusLabel = new Label("Wybierz plik");
 
-        Button logoutButton = new Button("Wyloguj"); // Przeniesione wyżej, żeby było widać zmienną
+        refreshButton.setMaxWidth(Double.MAX_VALUE);
+        uploadButton.setMaxWidth(Double.MAX_VALUE);
+        processButton.setMaxWidth(Double.MAX_VALUE);
+        previewButton.setMaxWidth(Double.MAX_VALUE);
+        deleteButton.setMaxWidth(Double.MAX_VALUE);
+        logoutButton.setMaxWidth(Double.MAX_VALUE);
 
-        // POŁĄCZONA LOGIKA BLOKOWANIA (Jeden listener, żeby panował porządek)
-        fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            boolean isSelected = (newVal != null);
-            deleteButton.setDisable(!isSelected);
-            // Przetwarzać można tylko pliki ze statusem UPLOADED
-            processButton.setDisable(!isSelected || !"UPLOADED".equals(newVal.status));
-        });
-
-        // AKCJE PRZYCISKÓW
+        // Akcje
         refreshButton.setOnAction(e -> fetchFiles(fileListView, fileStatusLabel));
-
         uploadButton.setOnAction(e -> {
             FileChooser fc = new FileChooser();
-            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV", "*.csv"));
-            File file = fc.showOpenDialog(window);
-            if (file != null) sendCsvToBackend(file, fileStatusLabel);
+            File f = fc.showOpenDialog(window);
+            if (f != null) sendCsvToBackend(f, fileStatusLabel);
         });
-
         processButton.setOnAction(e -> {
-            FileItem selected = fileListView.getSelectionModel().getSelectedItem();
-            if (selected != null) processFileOnBackend(selected, fileStatusLabel, fileListView);
+            FileItem s = fileListView.getSelectionModel().getSelectedItem();
+            if (s != null) processFileOnBackend(s, fileStatusLabel, fileListView);
         });
-
+        previewButton.setOnAction(e -> {
+            FileItem s = fileListView.getSelectionModel().getSelectedItem();
+            if (s != null) loadFilePreview(s, previewArea);
+        });
         deleteButton.setOnAction(e -> {
-            FileItem selected = fileListView.getSelectionModel().getSelectedItem();
-            if (selected != null) deleteFileOnBackend(selected, fileStatusLabel, fileListView);
+            FileItem s = fileListView.getSelectionModel().getSelectedItem();
+            if (s != null) deleteFileOnBackend(s, fileStatusLabel, fileListView);
         });
-
         logoutButton.setOnAction(e -> window.setScene(loginScene));
 
-        // JEDNO DODANIE WSZYSTKIEGO DO LAYOUTU
-        layout.getChildren().addAll(welcomeLabel, refreshButton, fileListView, uploadButton, processButton, deleteButton, fileStatusLabel, logoutButton);
+        // Listener blokowania
+        fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
+            boolean isSelected = (newV != null);
+            boolean isDeleted = isSelected && "DELETED".equals(newV.status);
+            previewButton.setDisable(!isSelected || isDeleted);
+            deleteButton.setDisable(!isSelected || isDeleted);
+            processButton.setDisable(!isSelected || !"UPLOADED".equals(newV.status));
+        });
 
-        dashboardScene = new Scene(layout, 500, 600);
+        controlPanel.getChildren().addAll(new Label("Medicalytics - Panel"), refreshButton, fileListView,
+                uploadButton, processButton, previewButton, deleteButton,
+                fileStatusLabel, logoutButton);
+
+        mainLayout.getChildren().addAll(previewPanel, controlPanel);
+        dashboardScene = new Scene(mainLayout, 900, 600);
     }
 
     private void sendCsvToBackend(File file, Label statusLabel) {
         try {
             String boundary = "---" + System.currentTimeMillis(); // Unikalny separator dla danych
-            HttpClient client = HttpClient.newHttpClient();
+
 
             byte[] multipartBody = createMultipartBody(file, boundary);
 
@@ -256,7 +273,7 @@ public class Main extends Application {
         launch(args);
     }
     private void fetchFiles(ListView<FileItem> listView, Label statusLabel) {
-        HttpClient client = HttpClient.newHttpClient();
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/api/files"))
                 .GET().build();
@@ -280,7 +297,7 @@ public class Main extends Application {
     }
 
     private void processFileOnBackend(FileItem item, Label statusLabel, ListView<FileItem> listView) {
-        HttpClient client = HttpClient.newHttpClient();
+
         // Zmieniamy na POST i używamy ID w URL - dokładnie tak, jak zrobiłaś w Controllerze!
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/api/files/" + item.id + "/process"))
@@ -303,7 +320,7 @@ public class Main extends Application {
                 });
     }
     private void deleteFileOnBackend(FileItem item, Label statusLabel, ListView<FileItem> listView) {
-        HttpClient client = HttpClient.newHttpClient();
+
         // Adres URL zgodny z planem Twojego kolegi
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/api/files/" + item.id + "/delete"))
@@ -322,6 +339,40 @@ public class Main extends Application {
                     });
                 }).exceptionally(ex -> {
                     Platform.runLater(() -> statusLabel.setText("Błąd połączenia: " + ex.getMessage()));
+                    return null;
+                });
+    }
+    private void loadFilePreview(FileItem item, javafx.scene.control.TextArea previewArea) {
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/files/" + item.id + "/preview"))
+                .GET()
+                .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(res -> {
+                    Platform.runLater(() -> {
+                        if (res.statusCode() == 200) {
+                            // Parsowanie JSON (tablica stringów)
+                            com.google.gson.Gson gson = new com.google.gson.Gson();
+                            String[] lines = gson.fromJson(res.body(), String[].class);
+
+                            // Łączenie linii w jeden tekst z nowymi liniami
+                            previewArea.setText(String.join("\n", lines));
+                        } else {
+                            // OBSŁUGA BŁĘDÓW (Alert)
+                            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.ERROR);
+                            alert.setTitle("Błąd podglądu");
+                            alert.setHeaderText("Nie udało się pobrać podglądu pliku.");
+                            alert.setContentText("Kod błędu: " + res.statusCode() + "\nSerwer mówi: " + res.body());
+                            alert.showAndWait();
+                        }
+                    });
+                })
+                .exceptionally(ex -> {
+                    Platform.runLater(() -> {
+                        previewArea.setText("Błąd połączenia: " + ex.getMessage());
+                    });
                     return null;
                 });
     }
