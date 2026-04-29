@@ -24,8 +24,15 @@ import javafx.scene.paint.Color;
 public class Main extends Application {
     Stage window;
     Scene loginScene, registerScene, dashboardScene, mainMenuScene, settingsScene, reportScene;
+
+    // Pola klasowe - używamy ich w wielu metodach
     ListView<FileItem> fileListView;
     Label fileStatusLabel;
+
+    // Jeden wspólny klient dla całej aplikacji (obsługuje sesje/ciasteczka)
+    private final HttpClient client = HttpClient.newBuilder()
+            .cookieHandler(new java.net.CookieManager())
+            .build();
 
     @Override
     public void start(Stage stage) {
@@ -34,6 +41,7 @@ public class Main extends Application {
         window.setTitle("Medicalytics");
         window.setMaximized(true);
 
+        // Inicjalizacja scen
         createLoginScene();
         createRegisterScene();
         createDashboardScene();
@@ -73,13 +81,13 @@ public class Main extends Application {
         loginButton.getStyleClass().add(Styles.ACCENT);
 
         loginButton.setOnAction(e -> {
-            HttpClient client = HttpClient.newHttpClient();
             String formBody = "username=" + usernameInput.getText() + "&password=" + passwordInput.getText();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("http://localhost:8080/api/auth/login"))
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .POST(HttpRequest.BodyPublishers.ofString(formBody))
                     .build();
+
             client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .thenAccept(response -> {
                         Platform.runLater(() -> {
@@ -87,8 +95,6 @@ public class Main extends Application {
                             if (responseBody.equals("Zalogowano pomyślnie!")) {
                                 fetchFiles(fileListView, fileStatusLabel);
                                 window.setScene(mainMenuScene);
-                                window.setMaximized(false);
-                                window.setMaximized(true);
                             } else {
                                 errorLabel.setText(responseBody);
                             }
@@ -99,11 +105,7 @@ public class Main extends Application {
         Button registerButton = new Button("Zarejestruj się");
         registerButton.setMaxWidth(250);
         registerButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
-        registerButton.setOnAction(e -> {
-            window.setScene(registerScene);
-            window.setMaximized(false);
-            window.setMaximized(true);
-        });
+        registerButton.setOnAction(e -> window.setScene(registerScene));
 
         layout.getChildren().addAll(titleLabel, usernameInput, passwordInput, loginButton, registerButton, errorLabel);
         loginScene = new Scene(layout, 400, 450);
@@ -130,7 +132,6 @@ public class Main extends Application {
         confirmPasswordInput.setMaxWidth(250);
 
         Label statusLabel = new Label();
-        statusLabel.getStyleClass().add(Styles.DANGER);
 
         Button registerButton = new Button("Stwórz konto");
         registerButton.setMaxWidth(250);
@@ -148,280 +149,188 @@ public class Main extends Application {
                 statusLabel.setText("Hasła nie są takie same!");
                 return;
             }
-            HttpClient client = HttpClient.newHttpClient();
+
             String formBody = "username=" + username + "&password=" + password;
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("http://localhost:8080/api/auth/register"))
                     .header("Content-Type", "application/x-www-form-urlencoded")
                     .POST(HttpRequest.BodyPublishers.ofString(formBody))
                     .build();
+
             client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .thenAccept(response -> {
                         Platform.runLater(() -> {
                             String responseBody = response.body();
                             statusLabel.setText(responseBody);
-                            if (response.statusCode() == 200 || responseBody.toLowerCase().contains("sukces")) {
-                                statusLabel.getStyleClass().setAll("label", Styles.SUCCESS);
-                            } else {
-                                statusLabel.getStyleClass().setAll("label", Styles.DANGER);
-                            }
                         });
                     });
         });
 
         Button backButton = new Button("Powrót do logowania");
-        backButton.setMaxWidth(250);
         backButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
-        backButton.setOnAction(e -> {
-            window.setScene(loginScene);
-            window.setMaximized(false);
-            window.setMaximized(true);
-        });
+        backButton.setOnAction(e -> window.setScene(loginScene));
 
         layout.getChildren().addAll(titleLabel, usernameInput, passwordInput, confirmPasswordInput, registerButton, backButton, statusLabel);
         registerScene = new Scene(layout, 400, 550);
     }
-    private void createMainMenuScene() {
-        BorderPane root = new BorderPane();
-        root.setPadding(new Insets(40));
-        Label titleLabel = new Label("Główne Menu");
-        titleLabel.getStyleClass().add(Styles.TITLE_1);
-        titleLabel.setStyle("-fx-text-fill: #FF0055; -fx-font-weight: bold;");
-        DropShadow neonGlow = new DropShadow();
-        neonGlow.setColor(Color.web("#FF0055"));
-        titleLabel.setEffect(neonGlow);
-        Button logoutButton = new Button("Wyloguj");
-        logoutButton.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.DANGER);
-        logoutButton.setStyle("-fx-cursor: hand;");
-        logoutButton.setOnAction(e -> {
-            window.setScene(loginScene);
-            window.setMaximized(false);
-            window.setMaximized(true);
-        });
-        javafx.scene.layout.StackPane topContainer = new javafx.scene.layout.StackPane();
-        topContainer.setPadding(new Insets(10, 0, 40, 0));
-        topContainer.getChildren().addAll(titleLabel, logoutButton);
-        javafx.scene.layout.StackPane.setAlignment(logoutButton, Pos.CENTER_RIGHT);
-        root.setTop(topContainer);
-        javafx.scene.layout.HBox cardsContainer = new javafx.scene.layout.HBox(60);
-        cardsContainer.setAlignment(Pos.CENTER);
-        cardsContainer.setPadding(new Insets(0, 60, 0, 60));
-        Button filesButton = createMenuCard("Pliki");
-        Button reportsButton = createMenuCard("Raporty");
-        Button settingsButton = createMenuCard("Ustawienia");
-        //szerokość i wysokość- 1/3 ekaranu
-        filesButton.prefHeightProperty().bind(root.heightProperty().divide(3));
-        filesButton.prefWidthProperty().bind(root.heightProperty().divide(3));
-        reportsButton.prefHeightProperty().bind(root.heightProperty().divide(3));
-        reportsButton.prefWidthProperty().bind(root.heightProperty().divide(3));
-        settingsButton.prefHeightProperty().bind(root.heightProperty().divide(3));
-        settingsButton.prefWidthProperty().bind(root.heightProperty().divide(3));
-        filesButton.setOnAction(e -> {
-            window.setScene(dashboardScene);
-            window.getHeight();
-            window.setMaximized(false);
-            window.setMaximized(true);
-        });
-        reportsButton.setOnAction(e -> {
-            window.setScene(reportScene);
-            window.getHeight();
-            window.setMaximized(false);
-            window.setMaximized(true);
-        });
-        settingsButton.setOnAction(e -> {
-            window.setScene(settingsScene);
-            window.getHeight();
-            window.setMaximized(false);
-            window.setMaximized(true);
-        });
-
-        cardsContainer.getChildren().addAll(filesButton, reportsButton, settingsButton);
-        root.setCenter(cardsContainer);
-
-        javafx.scene.layout.HBox bottomBar = new javafx.scene.layout.HBox();
-        bottomBar.setMinHeight(30);
-        bottomBar.setStyle("-fx-background-color: #444444; -fx-background-radius: 10;");
-
-        VBox bottomContainer = new VBox(bottomBar);
-        bottomContainer.setPadding(new Insets(50, 0, 10, 0)); // Odstęp od kafelków
-        root.setBottom(bottomContainer);
-
-        mainMenuScene = new Scene(root, 1000, 700);
-    }
-    private void createReportScene() {
-        VBox root = new VBox(40);
-        root.setAlignment(Pos.CENTER);
-        root.setPadding(new Insets(50));
-        Label label = new Label("TU BĘDĄ RAPORTY");
-        label.getStyleClass().add(Styles.TITLE_1);
-        label.setStyle("-fx-text-fill: #FF0055; -fx-font-weight: bold; -fx-font-size: 50px;");
-        DropShadow neon = new DropShadow();
-        neon.setColor(Color.web("#FF0055"));
-        label.setEffect(neon);
-        Button backButton = new Button("Wróć do Menu");
-        backButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
-        backButton.setOnAction(e -> {
-            window.setScene(mainMenuScene);
-            window.getHeight();
-            window.setMaximized(false);
-            window.setMaximized(true);
-        });
-
-        root.getChildren().addAll(label, backButton);
-        reportScene = new Scene(root, 1280, 720);
-    }
-
-    private void createSettingsScene() {
-        VBox root = new VBox(40);
-        root.setAlignment(Pos.CENTER);
-        root.setPadding(new Insets(50));
-        Label label = new Label("TU BĘDĄ USTAWIENIA");
-        label.getStyleClass().add(Styles.TITLE_1);
-        label.setStyle("-fx-text-fill: #FF0055; -fx-font-weight: bold; -fx-font-size: 50px;");
-        DropShadow neon = new DropShadow();
-        neon.setColor(Color.web("#FF0055"));
-        label.setEffect(neon);
-        Button backButton = new Button("Wróć do Menu");
-        backButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
-        backButton.setOnAction(e -> {
-            window.setScene(mainMenuScene);
-            window.getHeight();
-            window.setMaximized(false);
-            window.setMaximized(true);
-        });
-
-        root.getChildren().addAll(label, backButton);
-        settingsScene = new Scene(root, 1280, 720);
-    }
-    // Metoda pomocnicza do generowania spójnych kafelków
-    private Button createMenuCard(String text) {
-        Button card = new Button(text);
-        card.getStyleClass().addAll(Styles.ELEVATED_2, Styles.TITLE_3);
-        card.setStyle(
-                "-fx-background-color: #2D2D30; " +
-                        "-fx-background-radius: 15; " +
-                        "-fx-text-alignment: center; " +
-                        "-fx-cursor: hand;"
-        );
-
-        card.setOnMouseEntered(e -> card.setStyle("-fx-background-color: #3E3E42; -fx-background-radius: 15; -fx-text-alignment: center; -fx-cursor: hand;"));
-        card.setOnMouseExited(e -> card.setStyle("-fx-background-color: #2D2D30; -fx-background-radius: 15; -fx-text-alignment: center; -fx-cursor: hand;"));
-
-        return card;
-    }
 
     private void createDashboardScene() {
-        VBox layout = new VBox(25);
-        layout.setPadding(new Insets(50));
-        layout.setAlignment(Pos.CENTER);
-        layout.setFillWidth(true);
+        javafx.scene.layout.HBox mainLayout = new javafx.scene.layout.HBox(20);
+        mainLayout.setPadding(new Insets(20));
+        mainLayout.setAlignment(Pos.CENTER);
 
-        Label welcomeLabel = new Label("Medicalytics - Panel");
-        welcomeLabel.getStyleClass().add(Styles.TITLE_2);
-        fileStatusLabel = new Label("Wybierz plik z listy");
+        // LEWY PANEL (PODGLĄD)
+        VBox previewPanel = new VBox(10);
+        Label previewLabel = new Label("Podgląd zawartości pliku:");
+        previewLabel.setStyle("-fx-font-weight: bold;");
+        TextArea previewArea = new TextArea();
+        previewArea.setEditable(false);
+        previewArea.setPrefWidth(450);
+        previewArea.setPrefHeight(500);
+        previewPanel.getChildren().addAll(previewLabel, previewArea);
 
-        fileListView = new ListView<>();
-        fileListView.setMinHeight(400);
-        fileListView.setMaxWidth(900);
-        VBox.setVgrow(fileListView, javafx.scene.layout.Priority.ALWAYS);
+        // PRAWY PANEL (STEROWANIE)
+        VBox controlPanel = new VBox(10);
+        controlPanel.setMinWidth(300);
+        controlPanel.setAlignment(Pos.TOP_CENTER);
+
+        Label welcomeLabel = new Label("Medicalytics - Pliki");
+        welcomeLabel.getStyleClass().add(Styles.TITLE_3);
+
+        fileListView = new ListView<>(); // Używamy pola klasowego
+        fileListView.setPrefHeight(300);
 
         Button refreshButton = new Button("Odśwież listę");
         Button uploadButton = new Button("Wgraj nowy plik");
-        Button processButton = new Button("Przetwórz wybrany plik");
-        processButton.getStyleClass().add(Styles.ACCENT);
-        processButton.setDisable(true);
-
+        Button processButton = new Button("Przetwórz plik");
+        Button previewButton = new Button("Podgląd");
         Button deleteButton = new Button("Usuń plik");
-        deleteButton.getStyleClass().add(Styles.DANGER);
-        deleteButton.setDisable(true);
-
         Button backButton = new Button("Wróć do menu");
+        fileStatusLabel = new Label("Wybierz plik z listy");
+
+        // Stylizacja
+        deleteButton.getStyleClass().add(Styles.DANGER);
+        processButton.getStyleClass().add(Styles.ACCENT);
         backButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
 
-        double btnWidth = 300;
-        refreshButton.setMinWidth(btnWidth);
-        uploadButton.setMinWidth(btnWidth);
-        processButton.setMinWidth(btnWidth);
-        deleteButton.setMinWidth(btnWidth);
-        backButton.setMinWidth(btnWidth);
+        // Szerokość przycisków
+        refreshButton.setMaxWidth(Double.MAX_VALUE);
+        uploadButton.setMaxWidth(Double.MAX_VALUE);
+        processButton.setMaxWidth(Double.MAX_VALUE);
+        previewButton.setMaxWidth(Double.MAX_VALUE);
+        deleteButton.setMaxWidth(Double.MAX_VALUE);
+        backButton.setMaxWidth(Double.MAX_VALUE);
 
-        fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldVal, newVal) -> {
-            boolean isSelected = (newVal != null);
-            deleteButton.setDisable(!isSelected);
-            processButton.setDisable(!isSelected || !"UPLOADED".equals(newVal.status));
+        // Listener blokowania
+        fileListView.getSelectionModel().selectedItemProperty().addListener((obs, oldV, newV) -> {
+            boolean isSelected = (newV != null);
+            boolean isDeleted = isSelected && "DELETED".equals(newV.status);
+            previewButton.setDisable(!isSelected || isDeleted);
+            deleteButton.setDisable(!isSelected || isDeleted);
+            processButton.setDisable(!isSelected || !"UPLOADED".equals(newV.status));
         });
 
+        // Akcje
         refreshButton.setOnAction(e -> fetchFiles(fileListView, fileStatusLabel));
-
         uploadButton.setOnAction(e -> {
             FileChooser fc = new FileChooser();
             fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV", "*.csv"));
             File file = fc.showOpenDialog(window);
-            if (file != null) {
-                String fileName = file.getName();
-                boolean existsOnList = fileListView.getItems().stream()
-                        .anyMatch(item -> {
-                            if (item.fileName == null) return false;
-                            String cleanName = fileName.replace(".csv", "");
-                            return item.fileName.toLowerCase().startsWith(cleanName.toLowerCase());
-                        });
-                if (existsOnList) {
-                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                    alert.initOwner(window);
-                    alert.setTitle("Plik już istnieje");
-                    alert.setHeaderText("Plik o nazwie '" + fileName + "' jest już na liście.");
-                    alert.setContentText("Czy na pewno chcesz go dodać?");
-
-                    Optional<ButtonType> result = alert.showAndWait();
-                    if (result.isPresent() && result.get() == ButtonType.OK) {
-                        sendCsvToBackend(file, fileStatusLabel);
-                    }
-                } else {
-                    sendCsvToBackend(file, fileStatusLabel);
-                }
-            }
+            if (file != null) sendCsvToBackend(file, fileStatusLabel);
         });
-
         processButton.setOnAction(e -> {
-            FileItem selected = fileListView.getSelectionModel().getSelectedItem();
-            if (selected != null) processFileOnBackend(selected, fileStatusLabel, fileListView);
+            FileItem s = fileListView.getSelectionModel().getSelectedItem();
+            if (s != null) processFileOnBackend(s, fileStatusLabel, fileListView);
         });
-
+        previewButton.setOnAction(e -> {
+            FileItem s = fileListView.getSelectionModel().getSelectedItem();
+            if (s != null) loadFilePreview(s, previewArea);
+        });
         deleteButton.setOnAction(e -> {
-            FileItem selected = fileListView.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-                alert.initOwner(window);
-                alert.setTitle("Usuwanie");
-                alert.setHeaderText("Plik zostanie usunięty");
-                alert.setContentText("Czy na pewno chcesz go usunąć?");
-                Optional<ButtonType> result = alert.showAndWait();
-                if (result.isPresent() && result.get() == ButtonType.OK) {
-                    deleteFileOnBackend(selected, fileStatusLabel, fileListView);
-                }
-            }
+            FileItem s = fileListView.getSelectionModel().getSelectedItem();
+            if (s != null) deleteFileOnBackend(s, fileStatusLabel, fileListView);
         });
+        backButton.setOnAction(e -> window.setScene(mainMenuScene));
 
-        backButton.setOnAction(e -> {
-            window.setScene(mainMenuScene);
-            window.setMaximized(false);
-            window.setMaximized(true);
-        });
+        controlPanel.getChildren().addAll(welcomeLabel, refreshButton, fileListView,
+                uploadButton, processButton, previewButton, deleteButton,
+                fileStatusLabel, backButton);
 
-        layout.getChildren().addAll(welcomeLabel, refreshButton, fileListView, uploadButton, processButton, deleteButton, fileStatusLabel, backButton);
-        dashboardScene = new Scene(layout);
+        mainLayout.getChildren().addAll(previewPanel, controlPanel);
+        dashboardScene = new Scene(mainLayout, 900, 650);
+    }
+
+    private void createMainMenuScene() {
+        BorderPane root = new BorderPane();
+        root.setPadding(new Insets(40));
+
+        Label titleLabel = new Label("Główne Menu");
+        titleLabel.getStyleClass().add(Styles.TITLE_1);
+
+        Button logoutButton = new Button("Wyloguj");
+        logoutButton.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.DANGER);
+        logoutButton.setOnAction(e -> window.setScene(loginScene));
+
+        javafx.scene.layout.StackPane topContainer = new javafx.scene.layout.StackPane();
+        topContainer.getChildren().addAll(titleLabel, logoutButton);
+        javafx.scene.layout.StackPane.setAlignment(logoutButton, Pos.CENTER_RIGHT);
+        root.setTop(topContainer);
+
+        javafx.scene.layout.HBox cardsContainer = new javafx.scene.layout.HBox(20);
+        cardsContainer.setAlignment(Pos.CENTER);
+
+        Button filesButton = createMenuCard("Pliki");
+        Button reportsButton = createMenuCard("Raporty");
+        Button settingsButton = createMenuCard("Ustawienia");
+
+        filesButton.setOnAction(e -> window.setScene(dashboardScene));
+        reportsButton.setOnAction(e -> window.setScene(reportScene));
+        settingsButton.setOnAction(e -> window.setScene(settingsScene));
+
+        cardsContainer.getChildren().addAll(filesButton, reportsButton, settingsButton);
+        root.setCenter(cardsContainer);
+
+        mainMenuScene = new Scene(root, 1000, 700);
+    }
+
+    private void createReportScene() {
+        VBox root = new VBox(20);
+        root.setAlignment(Pos.CENTER);
+        Label label = new Label("TU BĘDĄ RAPORTY");
+        Button backButton = new Button("Wróć do Menu");
+        backButton.setOnAction(e -> window.setScene(mainMenuScene));
+        root.getChildren().addAll(label, backButton);
+        reportScene = new Scene(root, 800, 600);
+    }
+
+    private void createSettingsScene() {
+        VBox root = new VBox(20);
+        root.setAlignment(Pos.CENTER);
+        Label label = new Label("TU BĘDĄ USTAWIENIA");
+        Button backButton = new Button("Wróć do Menu");
+        backButton.setOnAction(e -> window.setScene(mainMenuScene));
+        root.getChildren().addAll(label, backButton);
+        settingsScene = new Scene(root, 800, 600);
+    }
+
+    private Button createMenuCard(String text) {
+        Button card = new Button(text);
+        card.setPrefSize(200, 200);
+        card.getStyleClass().addAll(Styles.ELEVATED_2, Styles.TITLE_3);
+        return card;
     }
 
     private void sendCsvToBackend(File file, Label statusLabel) {
         try {
             String boundary = "---" + System.currentTimeMillis();
-            HttpClient client = HttpClient.newHttpClient();
             byte[] multipartBody = createMultipartBody(file, boundary);
+
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create("http://localhost:8080/api/files/upload"))
                     .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                     .POST(HttpRequest.BodyPublishers.ofByteArray(multipartBody))
                     .build();
+
             client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .thenAccept(response -> {
                         Platform.runLater(() -> {
@@ -429,7 +338,7 @@ public class Main extends Application {
                                 statusLabel.setText("Sukces: Wgrano plik");
                                 fetchFiles(fileListView, statusLabel);
                             } else {
-                                statusLabel.setText("Błąd (" + response.statusCode() + "): " + response.body());
+                                statusLabel.setText("Błąd " + response.statusCode());
                             }
                         });
                     });
@@ -452,9 +361,7 @@ public class Main extends Application {
         return os.toByteArray();
     }
 
-    // POBIERANIE Z BACKENDU
     private void fetchFiles(ListView<FileItem> listView, Label statusLabel) {
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/api/files"))
                 .GET().build();
@@ -466,18 +373,14 @@ public class Main extends Application {
                             com.google.gson.Gson gson = new com.google.gson.Gson();
                             java.lang.reflect.Type listType = new com.google.gson.reflect.TypeToken<java.util.List<FileItem>>(){}.getType();
                             java.util.List<FileItem> files = gson.fromJson(res.body(), listType);
-
                             files.removeIf(f -> "DELETED".equals(f.status));
                             listView.setItems(javafx.collections.FXCollections.observableArrayList(files));
-                            statusLabel.setText("Lista odświeżona.");
                         }
                     });
                 });
     }
 
-    // PRZETWARZANIE
     private void processFileOnBackend(FileItem item, Label statusLabel, ListView<FileItem> listView) {
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/api/files/" + item.id + "/process"))
                 .POST(HttpRequest.BodyPublishers.noBody())
@@ -486,9 +389,7 @@ public class Main extends Application {
         client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenAccept(res -> {
                     Platform.runLater(() -> {
-                        javafx.scene.control.Alert alert = new javafx.scene.control.Alert(javafx.scene.control.Alert.AlertType.INFORMATION);
-                        alert.setTitle("Wynik przetwarzania");
-                        alert.setHeaderText(null);
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
                         alert.setContentText(res.body());
                         alert.showAndWait();
                         fetchFiles(listView, statusLabel);
@@ -496,9 +397,7 @@ public class Main extends Application {
                 });
     }
 
-    // USUWANIE
     private void deleteFileOnBackend(FileItem item, Label statusLabel, ListView<FileItem> listView) {
-        HttpClient client = HttpClient.newHttpClient();
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/api/files/" + item.id + "/delete"))
                 .POST(HttpRequest.BodyPublishers.noBody())
@@ -508,15 +407,28 @@ public class Main extends Application {
                 .thenAccept(res -> {
                     Platform.runLater(() -> {
                         if (res.statusCode() == 200) {
-                            statusLabel.setText("Plik został usunięty.");
+                            statusLabel.setText("Usunięto.");
                             fetchFiles(listView, statusLabel);
-                        } else {
-                            statusLabel.setText("Błąd: " + res.body());
                         }
                     });
-                }).exceptionally(ex -> {
-                    Platform.runLater(() -> statusLabel.setText("Błąd połączenia: " + ex.getMessage()));
-                    return null;
+                });
+    }
+
+    private void loadFilePreview(FileItem item, TextArea previewArea) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/files/" + item.id + "/preview"))
+                .GET()
+                .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(res -> {
+                    Platform.runLater(() -> {
+                        if (res.statusCode() == 200) {
+                            com.google.gson.Gson gson = new com.google.gson.Gson();
+                            String[] lines = gson.fromJson(res.body(), String[].class);
+                            previewArea.setText(String.join("\n", lines));
+                        }
+                    });
                 });
     }
 
@@ -525,13 +437,3 @@ public class Main extends Application {
     }
 }
 
-class FileItem {
-    Long id;
-    String fileName;
-    String status;
-
-    @Override
-    public String toString() {
-        return fileName + " [" + status + "]";
-    }
-}
