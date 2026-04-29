@@ -435,5 +435,19 @@ public class Main extends Application {
     public static void main(String[] args) {
         launch(args);
     }
+
+    //Klasa FileItem, nwm czemu jej nie bylo???
+    public static class FileItem {
+        public Long id;
+        public String fileName;
+        public String status;
+        public String uploadTime;
+
+        // Nadpisujemy metodę toString, aby ListView ładnie wyświetlało nazwy, a nie "krzaczki" w pamięci
+        @Override
+        public String toString() {
+            return fileName + " [" + status + "]";
+        }
+    }
 }
 
