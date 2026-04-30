@@ -49,8 +49,7 @@ public class Main extends Application {
         createReportScene();
         createSettingsScene();
 
-        window.setScene(loginScene);
-        window.show();
+        checkSessionAndStart();
     }
 
     private void createLoginScene() {
@@ -93,6 +92,7 @@ public class Main extends Application {
                         Platform.runLater(() -> {
                             String responseBody = response.body();
                             if (responseBody.equals("Zalogowano pomyślnie!")) {
+                                UserSession.getInstance().login(usernameInput.getText());
                                 fetchFiles(fileListView, fileStatusLabel);
                                 window.setScene(mainMenuScene);
                             } else {
@@ -269,7 +269,26 @@ public class Main extends Application {
 
         Button logoutButton = new Button("Wyloguj");
         logoutButton.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.DANGER);
-        logoutButton.setOnAction(e -> window.setScene(loginScene));
+        logoutButton.setOnAction(e -> {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/api/auth/logout"))
+                    .POST(HttpRequest.BodyPublishers.noBody())
+                    .build();
+
+            client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                    .thenAccept(response -> {
+                        Platform.runLater(() -> {
+                            // Czyścimy sesję lokalną niezależnie od odpowiedzi serwera
+                            UserSession.getInstance().logout();
+
+                            // Czyścimy ciasteczka w HttpClient
+                            ((java.net.CookieManager) client.cookieHandler().get()).getCookieStore().removeAll();
+
+                            // Wracamy do logowania
+                            window.setScene(loginScene);
+                        });
+                    });
+        });
 
         javafx.scene.layout.StackPane topContainer = new javafx.scene.layout.StackPane();
         topContainer.getChildren().addAll(titleLabel, logoutButton);
@@ -311,6 +330,40 @@ public class Main extends Application {
         backButton.setOnAction(e -> window.setScene(mainMenuScene));
         root.getChildren().addAll(label, backButton);
         settingsScene = new Scene(root, 800, 600);
+    }
+    private void checkSessionAndStart() {
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/auth/me"))
+                .GET()
+                .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(response -> {
+                    Platform.runLater(() -> {
+                        if (response.statusCode() == 200) {
+                            // Serwer nas zna! Pobieramy login (opcjonalnie z body)
+                            String username = response.body(); // Przyjmijmy, że body to login
+                            UserSession.getInstance().login(username);
+
+                            // Odświeżamy dane i idziemy do menu
+                            fetchFiles(fileListView, fileStatusLabel);
+                            window.setScene(mainMenuScene);
+                        } else {
+                            // Sesja nieważna lub brak - pokazujemy logowanie
+                            window.setScene(loginScene);
+                        }
+                        window.show();
+                    });
+                })
+                .exceptionally(ex -> {
+                    // Błąd połączenia (np. backend wyłączony) - i tak pokaż logowanie
+                    Platform.runLater(() -> {
+                        window.setScene(loginScene);
+                        window.show();
+                    });
+                    return null;
+                });
     }
 
     private Button createMenuCard(String text) {
