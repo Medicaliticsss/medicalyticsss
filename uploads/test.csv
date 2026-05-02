@@ -1,6 +1,0 @@
-imie,nazwisko,data_urodzenia,plec,pesel
-Jan,Kowalski,1985-05-12,M,85051212345
-Anna,Nowak,1992-13-24,F,92082412345  # BŁĄD: Nie ma 13. miesiąca
-Piotr,,1978-11-03,M,78110312345      # BŁĄD: Puste nazwisko
-Maria,Wojcik,2001-02-15,K,01221512345 # BŁĄD: Płeć to K zamiast F
-Stefan,Zalewski,1965-12-30,M,65123012345

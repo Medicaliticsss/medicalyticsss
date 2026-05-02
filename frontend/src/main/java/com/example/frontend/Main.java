@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
@@ -15,18 +16,21 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.Optional;
 import atlantafx.base.theme.Dracula;
 import atlantafx.base.theme.Styles;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
-import javafx.scene.chart.*;
 
 public class Main extends Application {
     Stage window;
-    Scene loginScene, registerScene, dashboardScene, mainMenuScene, settingsScene, reportScene;
 
-    // Pola klasowe - używamy ich w wielu metodach
+    // GŁÓWNA SCENA - trzyma rozmiar okna w ryzach
+    Scene mainScene;
+
+    // WIDOKI (Zamiast Scen)
+    Parent loginView, registerView, dashboardView, mainMenuView, settingsView, reportView;
+
+    // Pola klasowe
     ListView<FileItem> fileListView;
     Label fileStatusLabel, totalTestsLabel, normalResultsLabel, anomaliesLabel;
     javafx.scene.chart.PieChart reportChart;
@@ -41,9 +45,13 @@ public class Main extends Application {
         Application.setUserAgentStylesheet(new Dracula().getUserAgentStylesheet());
         window = stage;
         window.setTitle("Medicalytics");
-        window.setMaximized(true);
 
-        // Inicjalizacja scen
+        // Inicjalizacja pustej głównej sceny z domyślnym rozmiarem (dla trybu okienkowego)
+        mainScene = new Scene(new VBox(), 1200, 800);
+        window.setScene(mainScene);
+        window.setMaximized(true); // Wymuszamy maksymalizację na starcie
+
+        // Inicjalizacja wszystkich widoków (nie tworzą już nowych obiektów Scene!)
         createLoginScene();
         createRegisterScene();
         createDashboardScene();
@@ -51,7 +59,13 @@ public class Main extends Application {
         createReportScene();
         createSettingsScene();
 
+        // Uruchomienie weryfikacji sesji (ona zadecyduje, co wrzucić do mainScene)
         checkSessionAndStart();
+    }
+
+    // Nowa metoda pomocnicza do płynnego przełączania widoków
+    private void switchView(Parent view) {
+        mainScene.setRoot(view);
     }
 
     private void createLoginScene() {
@@ -96,7 +110,7 @@ public class Main extends Application {
                             if (responseBody.equals("Zalogowano pomyślnie!")) {
                                 UserSession.getInstance().login(usernameInput.getText());
                                 fetchFiles(fileListView, fileStatusLabel);
-                                window.setScene(mainMenuScene);
+                                switchView(mainMenuView);
                             } else {
                                 errorLabel.setText(responseBody);
                             }
@@ -107,10 +121,10 @@ public class Main extends Application {
         Button registerButton = new Button("Zarejestruj się");
         registerButton.setMaxWidth(250);
         registerButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
-        registerButton.setOnAction(e -> window.setScene(registerScene));
+        registerButton.setOnAction(e -> switchView(registerView));
 
         layout.getChildren().addAll(titleLabel, usernameInput, passwordInput, loginButton, registerButton, errorLabel);
-        loginScene = new Scene(layout, 400, 450);
+        loginView = layout;
     }
 
     private void createRegisterScene() {
@@ -170,37 +184,43 @@ public class Main extends Application {
 
         Button backButton = new Button("Powrót do logowania");
         backButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
-        backButton.setOnAction(e -> window.setScene(loginScene));
+        backButton.setOnAction(e -> switchView(loginView));
 
         layout.getChildren().addAll(titleLabel, usernameInput, passwordInput, confirmPasswordInput, registerButton, backButton, statusLabel);
-        registerScene = new Scene(layout, 400, 550);
+        registerView = layout;
     }
 
     private void createDashboardScene() {
-        javafx.scene.layout.HBox mainLayout = new javafx.scene.layout.HBox(20);
-        mainLayout.setPadding(new Insets(20));
+        javafx.scene.layout.HBox mainLayout = new javafx.scene.layout.HBox(40); // Większy odstęp między lewą a prawą stroną
+        mainLayout.setPadding(new Insets(40)); // Marginesy od krawędzi ekranu
         mainLayout.setAlignment(Pos.CENTER);
 
-        // LEWY PANEL (PODGLĄD)
+        //(PODGLĄD)
         VBox previewPanel = new VBox(10);
         Label previewLabel = new Label("Podgląd zawartości pliku:");
-        previewLabel.setStyle("-fx-font-weight: bold;");
+        previewLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;"); // Trochę większy tekst
+
         TextArea previewArea = new TextArea();
         previewArea.setEditable(false);
-        previewArea.setPrefWidth(450);
-        previewArea.setPrefHeight(500);
+        // Pozwala polu tekstowemu rosnąć w pionie w nieskończoność
+        javafx.scene.layout.VBox.setVgrow(previewArea, javafx.scene.layout.Priority.ALWAYS);
+
         previewPanel.getChildren().addAll(previewLabel, previewArea);
 
-        // PRAWY PANEL (STEROWANIE)
-        VBox controlPanel = new VBox(10);
-        controlPanel.setMinWidth(300);
+        //Pozwala całemu lewemu panelowi zająć całą dostępną szerokość okna
+        javafx.scene.layout.HBox.setHgrow(previewPanel, javafx.scene.layout.Priority.ALWAYS);
+
+        //PRAWY PANEL (STEROWANIE)
+        VBox controlPanel = new VBox(15); // Zwiększony odstęp między przyciskami
+        controlPanel.setMinWidth(350); // Szerszy panel boczny
         controlPanel.setAlignment(Pos.TOP_CENTER);
 
         Label welcomeLabel = new Label("Medicalytics - Pliki");
-        welcomeLabel.getStyleClass().add(Styles.TITLE_3);
+        welcomeLabel.getStyleClass().add(Styles.TITLE_2); // Większy tytuł dla panelu bocznego
 
-        fileListView = new ListView<>(); // Używamy pola klasowego
-        fileListView.setPrefHeight(300);
+        fileListView = new ListView<>();
+        // Pozwala liście plików rosnąć w pionie
+        javafx.scene.layout.VBox.setVgrow(fileListView, javafx.scene.layout.Priority.ALWAYS);
 
         Button refreshButton = new Button("Odśwież listę");
         Button uploadButton = new Button("Wgraj nowy plik");
@@ -252,14 +272,14 @@ public class Main extends Application {
             FileItem s = fileListView.getSelectionModel().getSelectedItem();
             if (s != null) deleteFileOnBackend(s, fileStatusLabel, fileListView);
         });
-        backButton.setOnAction(e -> window.setScene(mainMenuScene));
+        backButton.setOnAction(e -> switchView(mainMenuView));
 
         controlPanel.getChildren().addAll(welcomeLabel, refreshButton, fileListView,
                 uploadButton, processButton, previewButton, deleteButton,
                 fileStatusLabel, backButton);
 
         mainLayout.getChildren().addAll(previewPanel, controlPanel);
-        dashboardScene = new Scene(mainLayout, 900, 650);
+        dashboardView = mainLayout;
     }
 
     private void createMainMenuScene() {
@@ -280,14 +300,9 @@ public class Main extends Application {
             client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                     .thenAccept(response -> {
                         Platform.runLater(() -> {
-                            // Czyścimy sesję lokalną niezależnie od odpowiedzi serwera
                             UserSession.getInstance().logout();
-
-                            // Czyścimy ciasteczka w HttpClient
                             ((java.net.CookieManager) client.cookieHandler().get()).getCookieStore().removeAll();
-
-                            // Wracamy do logowania
-                            window.setScene(loginScene);
+                            switchView(loginView);
                         });
                     });
         });
@@ -304,24 +319,24 @@ public class Main extends Application {
         Button reportsButton = createMenuCard("Raporty");
         Button settingsButton = createMenuCard("Ustawienia");
 
-        filesButton.setOnAction(e -> window.setScene(dashboardScene));
+        filesButton.setOnAction(e -> switchView(dashboardView));
         reportsButton.setOnAction(e -> {
-            fetchReportSummary(); // Najpierw pobierz świeże dane
-            window.setScene(reportScene);
+            fetchReportSummary();
+            switchView(reportView);
         });
-        settingsButton.setOnAction(e -> window.setScene(settingsScene));
+        settingsButton.setOnAction(e -> switchView(settingsView));
 
         cardsContainer.getChildren().addAll(filesButton, reportsButton, settingsButton);
         root.setCenter(cardsContainer);
 
-        mainMenuScene = new Scene(root, 1000, 700);
+        mainMenuView = root;
     }
 
     private void createReportScene() {
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(30));
 
-        // --- NAGŁÓWEK ---
+        // NAGŁÓWEK
         VBox header = new VBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
         Label titleLabel = new Label("Raport Globalny");
@@ -329,12 +344,12 @@ public class Main extends Application {
 
         Button backButton = new Button("Powrót do Menu");
         backButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
-        backButton.setOnAction(e -> window.setScene(mainMenuScene));
+        backButton.setOnAction(e -> switchView(mainMenuView));
 
         header.getChildren().addAll(backButton, titleLabel);
         root.setTop(header);
 
-        // --- KAFELKI KPI (Liczby) ---
+        // KAFELKI KPI
         javafx.scene.layout.HBox kpiContainer = new javafx.scene.layout.HBox(20);
         kpiContainer.setAlignment(Pos.CENTER);
         kpiContainer.setPadding(new Insets(20));
@@ -345,7 +360,7 @@ public class Main extends Application {
 
         kpiContainer.getChildren().addAll(totalTestsLabel.getParent(), normalResultsLabel.getParent(), anomaliesLabel.getParent());
 
-        // --- WYKRES ---
+        // WYKRES
         reportChart = new javafx.scene.chart.PieChart();
         reportChart.setTitle("Proporcja wyników");
         reportChart.setLabelsVisible(true);
@@ -355,8 +370,9 @@ public class Main extends Application {
         centerLayout.setAlignment(Pos.CENTER);
         root.setCenter(centerLayout);
 
-        reportScene = new Scene(root, 1000, 800);
+        reportView = root;
     }
+
     // Pomocnicza metoda do tworzenia ładnych kart z liczbami
     private Label createKPICard(String title, String value, String styleClass) {
         VBox box = new VBox(5);
@@ -372,7 +388,7 @@ public class Main extends Application {
         valueLbl.getStyleClass().add(styleClass);
 
         box.getChildren().addAll(titleLbl, valueLbl);
-        return valueLbl; // Zwracamy Label, żeby móc go potem aktualizować
+        return valueLbl;
     }
 
     private void createSettingsScene() {
@@ -380,12 +396,12 @@ public class Main extends Application {
         root.setAlignment(Pos.CENTER);
         Label label = new Label("TU BĘDĄ USTAWIENIA");
         Button backButton = new Button("Wróć do Menu");
-        backButton.setOnAction(e -> window.setScene(mainMenuScene));
+        backButton.setOnAction(e -> switchView(mainMenuView));
         root.getChildren().addAll(label, backButton);
-        settingsScene = new Scene(root, 800, 600);
+        settingsView = root;
     }
-    private void checkSessionAndStart() {
 
+    private void checkSessionAndStart() {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/api/auth/me"))
                 .GET()
@@ -395,34 +411,30 @@ public class Main extends Application {
                 .thenAccept(response -> {
                     Platform.runLater(() -> {
                         if (response.statusCode() == 200) {
-                            // Serwer nas zna! Pobieramy login (opcjonalnie z body)
-                            String username = response.body(); // Przyjmijmy, że body to login
+                            String username = response.body();
                             UserSession.getInstance().login(username);
-
-                            // Odświeżamy dane i idziemy do menu
                             fetchFiles(fileListView, fileStatusLabel);
-                            window.setScene(mainMenuScene);
+                            switchView(mainMenuView);
                         } else {
-                            // Sesja nieważna lub brak - pokazujemy logowanie
-                            window.setScene(loginScene);
+                            switchView(loginView);
                         }
                         window.show();
                     });
                 })
                 .exceptionally(ex -> {
-                    // Błąd połączenia (np. backend wyłączony) - i tak pokaż logowanie
                     Platform.runLater(() -> {
-                        window.setScene(loginScene);
+                        switchView(loginView);
                         window.show();
                     });
                     return null;
                 });
     }
 
+    // Powiększone kafelki w menu głównym
     private Button createMenuCard(String text) {
         Button card = new Button(text);
-        card.setPrefSize(200, 200);
-        card.getStyleClass().addAll(Styles.ELEVATED_2, Styles.TITLE_3);
+        card.setPrefSize(300, 300); // Zmiana na 300x300
+        card.getStyleClass().addAll(Styles.ELEVATED_2, Styles.TITLE_2); // Zmiana na większą czcionkę (TITLE_2)
         return card;
     }
 
@@ -537,6 +549,7 @@ public class Main extends Application {
                     });
                 });
     }
+
     private void fetchReportSummary() {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create("http://localhost:8080/api/reports/summary"))
@@ -553,15 +566,14 @@ public class Main extends Application {
                             // Aktualizacja liczb
                             totalTestsLabel.setText(String.valueOf(summary.totalTests));
                             normalResultsLabel.setText(String.valueOf(summary.normalResults));
-                            anomaliesLabel.setText(String.valueOf(summary.anomalies));
+                            anomaliesLabel.setText(String.valueOf(summary.abnormalResults));
 
                             // Aktualizacja wykresu
                             reportChart.getData().clear();
                             if (summary.totalTests > 0) {
                                 reportChart.getData().add(new javafx.scene.chart.PieChart.Data("W normie", summary.normalResults));
-                                reportChart.getData().add(new javafx.scene.chart.PieChart.Data("Anomalie", summary.anomalies));
+                                reportChart.getData().add(new javafx.scene.chart.PieChart.Data("Anomalie", summary.abnormalResults));
                             } else {
-                                // Jeśli brak danych, wykres będzie pusty - obsłużone przez getData().clear()
                                 totalTestsLabel.setText("Brak danych");
                             }
                         }
@@ -573,23 +585,21 @@ public class Main extends Application {
         launch(args);
     }
 
-    //Klasa FileItem, nwm czemu jej nie bylo???
     public static class FileItem {
         public Long id;
         public String fileName;
         public String status;
         public String uploadTime;
 
-        // Nadpisujemy metodę toString, aby ListView ładnie wyświetlało nazwy, a nie "krzaczki" w pamięci
         @Override
         public String toString() {
             return fileName + " [" + status + "]";
         }
     }
+
     class ReportSummary {
         int totalTests;
         int normalResults;
-        int anomalies;
+        int abnormalResults;
     }
 }
-
