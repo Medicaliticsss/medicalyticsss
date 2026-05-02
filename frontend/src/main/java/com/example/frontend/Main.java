@@ -20,6 +20,7 @@ import atlantafx.base.theme.Dracula;
 import atlantafx.base.theme.Styles;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.paint.Color;
+import javafx.scene.chart.*;
 
 public class Main extends Application {
     Stage window;
@@ -27,7 +28,8 @@ public class Main extends Application {
 
     // Pola klasowe - używamy ich w wielu metodach
     ListView<FileItem> fileListView;
-    Label fileStatusLabel;
+    Label fileStatusLabel, totalTestsLabel, normalResultsLabel, anomaliesLabel;
+    javafx.scene.chart.PieChart reportChart;
 
     // Jeden wspólny klient dla całej aplikacji (obsługuje sesje/ciasteczka)
     private final HttpClient client = HttpClient.newBuilder()
@@ -303,7 +305,10 @@ public class Main extends Application {
         Button settingsButton = createMenuCard("Ustawienia");
 
         filesButton.setOnAction(e -> window.setScene(dashboardScene));
-        reportsButton.setOnAction(e -> window.setScene(reportScene));
+        reportsButton.setOnAction(e -> {
+            fetchReportSummary(); // Najpierw pobierz świeże dane
+            window.setScene(reportScene);
+        });
         settingsButton.setOnAction(e -> window.setScene(settingsScene));
 
         cardsContainer.getChildren().addAll(filesButton, reportsButton, settingsButton);
@@ -313,13 +318,61 @@ public class Main extends Application {
     }
 
     private void createReportScene() {
-        VBox root = new VBox(20);
-        root.setAlignment(Pos.CENTER);
-        Label label = new Label("TU BĘDĄ RAPORTY");
-        Button backButton = new Button("Wróć do Menu");
+        BorderPane root = new BorderPane();
+        root.setPadding(new Insets(30));
+
+        // --- NAGŁÓWEK ---
+        VBox header = new VBox(10);
+        header.setAlignment(Pos.CENTER_LEFT);
+        Label titleLabel = new Label("Raport Globalny");
+        titleLabel.getStyleClass().add(Styles.TITLE_1);
+
+        Button backButton = new Button("Powrót do Menu");
+        backButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
         backButton.setOnAction(e -> window.setScene(mainMenuScene));
-        root.getChildren().addAll(label, backButton);
-        reportScene = new Scene(root, 800, 600);
+
+        header.getChildren().addAll(backButton, titleLabel);
+        root.setTop(header);
+
+        // --- KAFELKI KPI (Liczby) ---
+        javafx.scene.layout.HBox kpiContainer = new javafx.scene.layout.HBox(20);
+        kpiContainer.setAlignment(Pos.CENTER);
+        kpiContainer.setPadding(new Insets(20));
+
+        totalTestsLabel = createKPICard("Wszystkie badania", "0", Styles.TEXT_BOLD);
+        normalResultsLabel = createKPICard("W normie", "0", Styles.SUCCESS);
+        anomaliesLabel = createKPICard("Anomalie", "0", Styles.DANGER);
+
+        kpiContainer.getChildren().addAll(totalTestsLabel.getParent(), normalResultsLabel.getParent(), anomaliesLabel.getParent());
+
+        // --- WYKRES ---
+        reportChart = new javafx.scene.chart.PieChart();
+        reportChart.setTitle("Proporcja wyników");
+        reportChart.setLabelsVisible(true);
+        reportChart.setLegendSide(javafx.geometry.Side.BOTTOM);
+
+        VBox centerLayout = new VBox(30, kpiContainer, reportChart);
+        centerLayout.setAlignment(Pos.CENTER);
+        root.setCenter(centerLayout);
+
+        reportScene = new Scene(root, 1000, 800);
+    }
+    // Pomocnicza metoda do tworzenia ładnych kart z liczbami
+    private Label createKPICard(String title, String value, String styleClass) {
+        VBox box = new VBox(5);
+        box.setAlignment(Pos.CENTER);
+        box.setPadding(new Insets(20));
+        box.setStyle("-fx-background-color: #2D2D30; -fx-background-radius: 10; -fx-min-width: 200;");
+
+        Label titleLbl = new Label(title);
+        titleLbl.getStyleClass().add(Styles.TEXT_MUTED);
+
+        Label valueLbl = new Label(value);
+        valueLbl.getStyleClass().add(Styles.TITLE_2);
+        valueLbl.getStyleClass().add(styleClass);
+
+        box.getChildren().addAll(titleLbl, valueLbl);
+        return valueLbl; // Zwracamy Label, żeby móc go potem aktualizować
     }
 
     private void createSettingsScene() {
@@ -484,6 +537,37 @@ public class Main extends Application {
                     });
                 });
     }
+    private void fetchReportSummary() {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/reports/summary"))
+                .GET()
+                .build();
+
+        client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenAccept(res -> {
+                    Platform.runLater(() -> {
+                        if (res.statusCode() == 200) {
+                            com.google.gson.Gson gson = new com.google.gson.Gson();
+                            ReportSummary summary = gson.fromJson(res.body(), ReportSummary.class);
+
+                            // Aktualizacja liczb
+                            totalTestsLabel.setText(String.valueOf(summary.totalTests));
+                            normalResultsLabel.setText(String.valueOf(summary.normalResults));
+                            anomaliesLabel.setText(String.valueOf(summary.anomalies));
+
+                            // Aktualizacja wykresu
+                            reportChart.getData().clear();
+                            if (summary.totalTests > 0) {
+                                reportChart.getData().add(new javafx.scene.chart.PieChart.Data("W normie", summary.normalResults));
+                                reportChart.getData().add(new javafx.scene.chart.PieChart.Data("Anomalie", summary.anomalies));
+                            } else {
+                                // Jeśli brak danych, wykres będzie pusty - obsłużone przez getData().clear()
+                                totalTestsLabel.setText("Brak danych");
+                            }
+                        }
+                    });
+                });
+    }
 
     public static void main(String[] args) {
         launch(args);
@@ -501,6 +585,11 @@ public class Main extends Application {
         public String toString() {
             return fileName + " [" + status + "]";
         }
+    }
+    class ReportSummary {
+        int totalTests;
+        int normalResults;
+        int anomalies;
     }
 }
 
