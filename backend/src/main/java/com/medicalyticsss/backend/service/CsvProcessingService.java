@@ -15,7 +15,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.Optional;
 
 @Service
 public class CsvProcessingService {
@@ -57,7 +56,6 @@ public class CsvProcessingService {
 
             for (CSVRecord record : csvParser) {
                 try {
-                    // przekazuje fileHistory, zeby moc przupisac wynik do tego pliku
                     processSingleRecord(record, fileHistory);
                     successCount++;
                 } catch (Exception e) {
@@ -92,34 +90,41 @@ public class CsvProcessingService {
 
     private void processSingleRecord(CSVRecord record, FileHistory fileHistory) {
 
-        // wyciaganie danych z csv
-
+        // 1. WYCIĄGANIE DANYCH Z CSV (Dodano nowe kolumny)
         String name = record.get("imie");
         String lastName = record.get("nazwisko");
         String birthDateStr = record.get("data_urodzenia");
         String genderStr = record.get("plec");
         String pesel = record.get("pesel");
-
         String facilityNameStr = record.get("placowka_nazwa");
         String cityStr = record.get("miasto");
-
+        String provinceStr = record.get("wojewodztwo"); // <--- NOWE
         String testCodeStr = record.get("kod_badania");
         String testNameStr = record.get("nazwa_badania");
+        String categoryNameStr = record.get("kategoria_badania"); // <--- NOWE
         String unitStr = record.get("jednostka");
-
         String resultStr = record.get("wynik");
         String normMinStr = record.get("norma_min");
         String normMaxStr = record.get("norma_max");
 
-        // walidacja i zapis pacjenta
+        // 2. ŚCISŁA WALIDACJA (ŻELAZNA BRAMKA) - Rozszerzona o nowe pola
+        if (name == null || name.isBlank()) throw new IllegalArgumentException("Brak imienia");
+        if (lastName == null || lastName.isBlank()) throw new IllegalArgumentException("Brak nazwiska");
+        if (birthDateStr == null || birthDateStr.isBlank()) throw new IllegalArgumentException("Brak daty urodzenia");
+        if (genderStr == null || genderStr.isBlank()) throw new IllegalArgumentException("Brak płci");
+        if (pesel == null || pesel.isBlank() || pesel.length() != 11) throw new IllegalArgumentException("Nieprawidłowy lub brakujący numer PESEL");
+        if (facilityNameStr == null || facilityNameStr.isBlank()) throw new IllegalArgumentException("Brak nazwy placówki");
+        if (cityStr == null || cityStr.isBlank()) throw new IllegalArgumentException("Brak miasta placówki");
+        if (provinceStr == null || provinceStr.isBlank()) throw new IllegalArgumentException("Brak województwa placówki"); // <--- NOWE
+        if (testCodeStr == null || testCodeStr.isBlank()) throw new IllegalArgumentException("Brak kodu badania");
+        if (testNameStr == null || testNameStr.isBlank()) throw new IllegalArgumentException("Brak nazwy badania");
+        if (categoryNameStr == null || categoryNameStr.isBlank()) throw new IllegalArgumentException("Brak kategorii badania"); // <--- NOWE
+        if (unitStr == null || unitStr.isBlank()) throw new IllegalArgumentException("Brak jednostki badania");
+        if (resultStr == null || resultStr.isBlank()) throw new IllegalArgumentException("Brak wyniku badania");
+        if (normMinStr == null || normMinStr.isBlank()) throw new IllegalArgumentException("Brak normy minimalnej");
+        if (normMaxStr == null || normMaxStr.isBlank()) throw new IllegalArgumentException("Brak normy maksymalnej");
 
-        if (name == null || name.isEmpty() || lastName == null || lastName.isEmpty()) {
-            throw new IllegalArgumentException("Brak imienia lub nazwiska");
-        }
-        if (pesel == null || pesel.length() != 11) {
-            throw new IllegalArgumentException("Nieprawidłowy numer PESEL");
-        }
-
+        // 3. PARSOWANIE I ZAPIS PACJENTA
         int birthYear;
         try {
             LocalDate birthDate = LocalDate.parse(birthDateStr);
@@ -136,8 +141,6 @@ public class CsvProcessingService {
         }
 
         String hash = HashUtils.generateHash(pesel);
-
-        // szukamy pacjenta, a jeśli go nie ma - tworzymy
         Patient patient = patientRepository.findByPatientHash(hash).orElseGet(() -> {
             Patient newPatient = new Patient();
             newPatient.setPatientHash(hash);
@@ -146,59 +149,84 @@ public class CsvProcessingService {
             return patientRepository.save(newPatient);
         });
 
-        // walidacja i zapis placowki
-        if (facilityNameStr == null || facilityNameStr.isBlank()) {
-            throw new IllegalArgumentException("Brak nazwy placówki");
+        // 4. PARSOWANIE I ZAPIS PLACÓWKI (Z dodanym Smart Update dla starego województwa)
+        Facility facility = facilityRepository.findByFacilityNameAndCity(facilityNameStr, cityStr).orElse(null);
+        if (facility == null) {
+            facility = new Facility();
+            facility.setFacilityName(facilityNameStr);
+            facility.setCity(cityStr);
+            facility.setProvince(provinceStr); // Przypisanie wymaganego województwa
+            facility = facilityRepository.save(facility);
+        } else if (facility.getProvince() == null) {
+            // Placówka istnieje, ale ze starych wgrań gdzie województwo było NULL - naprawiamy to
+            facility.setProvince(provinceStr);
+            facility = facilityRepository.save(facility);
         }
-        Facility facility = facilityRepository.findByFacilityNameAndCity(facilityNameStr, cityStr).orElseGet(() -> {
-            Facility newFacility = new Facility();
-            newFacility.setFacilityName(facilityNameStr);
-            newFacility.setCity(cityStr);
-            return facilityRepository.save(newFacility);
-        });
 
-        // walidacja i zapis slownika badan
-        if (testCodeStr == null || testCodeStr.isBlank() || testNameStr == null || testNameStr.isBlank()) {
-            throw new IllegalArgumentException("Brak kodu lub nazwy badania");
+        // 5. PARSOWANIE NORM
+        BigDecimal normMin;
+        BigDecimal normMax;
+        try {
+            normMin = new BigDecimal(normMinStr.replace(",", "."));
+            normMax = new BigDecimal(normMaxStr.replace(",", "."));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Błąd formatu liczbowego w normach");
         }
-        TestType testType = testTypeRepository.findByTestCode(testCodeStr).orElseGet(() -> {
-            TestType newTest = new TestType();
-            newTest.setTestCode(testCodeStr);
-            newTest.setTestName(testNameStr);
-            newTest.setUnit(unitStr);
-            return testTypeRepository.save(newTest);
-        });
 
-        // parsowanie wynikow i norm
+        // 6. WALIDACJA I ZAPIS SŁOWNIKA BADAŃ
+        TestType testType = testTypeRepository.findByTestCode(testCodeStr).orElse(null);
+
+        if (testType == null) {
+            testType = new TestType();
+            testType.setTestCode(testCodeStr);
+            testType.setTestName(testNameStr);
+            testType.setCategoryName(categoryNameStr); // Przypisanie wymaganej kategorii
+            testType.setUnit(unitStr);
+            testType.setNormMin(normMin);
+            testType.setNormMax(normMax);
+            testType = testTypeRepository.save(testType);
+        } else {
+            // Smart Update - aktualizuje tylko wtedy, gdy starszy wpis miał w tych miejscach NULL
+            boolean needsUpdate = false;
+
+            if (testType.getNormMin() == null) {
+                testType.setNormMin(normMin);
+                testType.setNormMax(normMax);
+                needsUpdate = true;
+            }
+            if (testType.getUnit() == null) {
+                testType.setUnit(unitStr);
+                needsUpdate = true;
+            }
+            if (testType.getCategoryName() == null) {
+                testType.setCategoryName(categoryNameStr);
+                needsUpdate = true;
+            }
+
+            if (needsUpdate) {
+                testType = testTypeRepository.save(testType);
+            }
+        }
+
+        // 7. PARSOWANIE WYNIKÓW
         BigDecimal resultValue;
         try {
-            // Replace zabezpiecza przed wpisaniem "15,5" zamiast "15.5"
             resultValue = new BigDecimal(resultStr.replace(",", "."));
         } catch (Exception e) {
             throw new IllegalArgumentException("Wynik badania nie jest prawidłową liczbą: " + resultStr);
         }
 
-        BigDecimal normMin = null;
-        BigDecimal normMax = null;
-        try {
-            if (normMinStr != null && !normMinStr.isBlank()) normMin = new BigDecimal(normMinStr.replace(",", "."));
-            if (normMaxStr != null && !normMaxStr.isBlank()) normMax = new BigDecimal(normMaxStr.replace(",", "."));
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Błąd formatu liczbowego w normach");
-        }
-
-        // czy wynik jest poza normą?
+        // 8. CZY WYNIK JEST POZA NORMĄ?
         boolean isAbnormal = false;
-        if (normMin != null && resultValue.compareTo(normMin) < 0) {
+        if (resultValue.compareTo(normMin) < 0) {
             isAbnormal = true; // zbyt niski
-        }
-        if (normMax != null && resultValue.compareTo(normMax) > 0) {
+        } else if (resultValue.compareTo(normMax) > 0) {
             isAbnormal = true; // zbyt wysoki
         }
 
-        // ZAPIS WYNIKU DO BAZY
+        // 9. ZAPIS WYNIKU DO BAZY
         FactTestResult fact = new FactTestResult();
-        fact.setFileHistory(fileHistory); // powiazanie z plikiem
+        fact.setFileHistory(fileHistory);
         fact.setPatient(patient);
         fact.setFacility(facility);
         fact.setTestType(testType);
@@ -219,20 +247,16 @@ public class CsvProcessingService {
 
     @Transactional
     public void softDeleteAndRollback(Long fileId) {
-        // 1. Szukamy pliku w bazie
         FileHistory fileHistory = fileHistoryRepository.findById(fileId)
                 .orElseThrow(() -> new IllegalArgumentException("Nie znaleziono pliku o ID: " + fileId));
 
-        // 2. Rollback - usuwamy powiązane rekordy (Błędy i Wyniki badań)
         errorRepository.deleteByFileHistoryId(fileId);
         factTestResultRepository.deleteByFileHistoryId(fileId);
 
-        // 3. Zmiana statusu na DELETED (Miękkie usuwanie) i zerowanie liczników
         fileHistory.setStatus(FileStatus.DELETED);
         fileHistory.setSuccessCount(0);
         fileHistory.setErrorCount(0);
 
-        // 4. Zapisujemy zaktualizowaną historię pliku
         fileHistoryRepository.save(fileHistory);
     }
 }
