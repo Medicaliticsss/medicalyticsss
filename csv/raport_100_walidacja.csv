@@ -1,0 +1,101 @@
+imie,nazwisko,data_urodzenia,plec,pesel,placowka_nazwa,miasto,wojewodztwo,kod_badania,nazwa_badania,kategoria_badania,wynik,jednostka,norma_min,norma_max
+Barbara,Kamiński,1982-11-26,F,90020203462,Laboratorium Testowe,Poznań,Wielkopolskie,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Michał,Wiśniewski,1984-01-10,M,98072702385,Laboratorium Testowe,Poznań,,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Barbara,Kowalski,1978-03-12,F,86072104368,,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Ewa,Wiśniewski,2000-09-18,F,123,Laboratorium Testowe,Poznań,Wielkopolskie,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Magdalena,Szymański,1978-04-30,F,81080608008,Laboratorium Testowe,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Joanna,Wiśniewski,1981-02-20,F,83030708002,Laboratorium Testowe,Poznań,,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Elżbieta,Zieliński,1980-11-18,F,99042506888,,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Piotr,Wójcik,1972-12-10,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Magdalena,Szymański,1988-09-14,F,97020702654,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Małgorzata,Nowak,1962-07-31,F,80022509780,Laboratorium Testowe,Poznań,,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Andrzej,Woźniak,1982-02-13,M,85040106435,,Poznań,Wielkopolskie,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Jakub,Kowalski,1972-07-30,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Magdalena,Woźniak,1996-01-06,F,96111305678,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Jan,Wiśniewski,1969-12-17,M,89082304749,Laboratorium Testowe,Poznań,,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Andrzej,Kowalczyk,1978-09-03,M,92040905377,,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Tomasz,Wiśniewski,1998-11-05,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Joanna,Szymański,1976-02-16,F,94062201482,Laboratorium Testowe,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Andrzej,Zieliński,1981-10-01,M,97050708299,Laboratorium Testowe,Poznań,,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Katarzyna,Wójcik,1970-07-20,F,89040304634,,Poznań,Wielkopolskie,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Michał,Woźniak,2004-11-29,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Tomasz,Nowak,1990-08-27,M,95091601115,Laboratorium Testowe,Poznań,Wielkopolskie,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Magdalena,Zieliński,1997-09-06,F,86110907068,Laboratorium Testowe,Poznań,,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Barbara,Kowalski,1992-07-16,F,83100805242,,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Adam,Wójcik,1981-06-29,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Ewa,Woźniak,1974-05-26,F,83071308384,Laboratorium Testowe,Poznań,Wielkopolskie,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Krzysztof,Wiśniewski,1965-12-28,M,85012308373,Laboratorium Testowe,Poznań,,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Marcin,Wiśniewski,1970-12-15,M,90070303455,,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Jakub,Szymański,1979-08-03,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Maria,Lewandowski,1989-04-12,F,92032202298,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Jakub,Kowalski,1975-05-14,M,93082803717,Laboratorium Testowe,Poznań,,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Małgorzata,Kamiński,1990-06-24,F,93110704630,,Poznań,Wielkopolskie,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Magdalena,Kamiński,1981-05-02,F,123,Laboratorium Testowe,Poznań,Wielkopolskie,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Ewa,Lewandowski,1974-03-01,F,94031205874,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Marcin,Lewandowski,1999-11-15,M,91112703993,Laboratorium Testowe,Poznań,,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Jan,Kowalczyk,2005-03-04,M,80070601525,,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Maria,Zieliński,1971-09-10,F,123,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Agnieszka,Kamiński,1988-01-24,F,89011503850,Laboratorium Testowe,Poznań,Wielkopolskie,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Piotr,Nowak,1990-09-04,M,99102607225,Laboratorium Testowe,Poznań,,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Katarzyna,Szymański,2000-07-14,F,85110507612,,Poznań,Wielkopolskie,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Paweł,Kowalski,1975-07-23,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Katarzyna,Zieliński,1974-10-05,F,81042606088,Laboratorium Testowe,Poznań,Wielkopolskie,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Magdalena,Nowak,2000-05-20,F,94032605546,Laboratorium Testowe,Poznań,,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Jan,Kowalski,2003-05-29,M,95012108919,,Poznań,Wielkopolskie,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Jan,Lewandowski,2000-10-15,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Michał,Szymański,2004-07-04,M,99060801497,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Magdalena,Wiśniewski,1970-09-05,F,89110402270,Laboratorium Testowe,Poznań,,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Andrzej,Kamiński,1974-05-07,M,89122701947,,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Adam,Kowalski,1973-03-30,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Marcin,Lewandowski,1994-07-22,M,93121209001,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Katarzyna,Kowalski,2004-09-19,F,92052209058,Laboratorium Testowe,Poznań,,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Jakub,Woźniak,1977-09-02,M,88060907961,,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Anna,Woźniak,1999-06-19,F,123,Laboratorium Testowe,Poznań,Wielkopolskie,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Marcin,Kowalski,1967-03-13,M,92102705675,Laboratorium Testowe,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Ewa,Szymański,1984-10-09,F,84112808718,Laboratorium Testowe,Poznań,,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Krzysztof,Nowak,1971-12-22,M,80061802493,,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Elżbieta,Szymański,1996-12-30,F,123,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Magdalena,Wójcik,1999-09-18,F,93032208184,Laboratorium Testowe,Poznań,Wielkopolskie,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Magdalena,Woźniak,1979-09-22,F,94030105318,Laboratorium Testowe,Poznań,,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Adam,Wiśniewski,1960-11-28,M,94082204201,,Poznań,Wielkopolskie,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Piotr,Kowalski,2004-09-09,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Jan,Zieliński,1986-04-29,M,96082008265,Laboratorium Testowe,Poznań,Wielkopolskie,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Krzysztof,Wiśniewski,1993-10-30,M,88031409857,Laboratorium Testowe,Poznań,,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Katarzyna,Wójcik,1984-12-25,F,84011608668,,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Anna,Lewandowski,1970-10-11,F,123,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Michał,Szymański,1960-04-01,M,80012602743,Laboratorium Testowe,Poznań,Wielkopolskie,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Paweł,Nowak,1967-08-01,M,82071204025,Laboratorium Testowe,Poznań,,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Joanna,Lewandowski,1993-02-03,F,87011705036,,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Krzysztof,Woźniak,1991-01-16,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Jakub,Wójcik,1988-06-24,M,81091007103,Laboratorium Testowe,Poznań,Wielkopolskie,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Krzysztof,Szymański,1999-01-01,M,89010107453,Laboratorium Testowe,Poznań,,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Adam,Szymański,1973-10-26,M,88092202885,,Poznań,Wielkopolskie,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Ewa,Kowalczyk,1965-11-17,F,123,Laboratorium Testowe,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Adam,Nowak,1996-10-20,M,92030106887,Laboratorium Testowe,Poznań,Wielkopolskie,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Elżbieta,Zieliński,1983-12-12,F,98050507720,Laboratorium Testowe,Poznań,,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Jan,Wiśniewski,1982-09-18,M,92030105355,,Poznań,Wielkopolskie,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Marcin,Nowak,1992-10-22,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Agnieszka,Kamiński,1969-10-01,F,96090503278,Laboratorium Testowe,Poznań,Wielkopolskie,CHOL,Cholesterol,Lipidogram,80.0,mg/dL,115.0,190.0
+Jakub,Kowalczyk,2001-09-18,M,81071304891,Laboratorium Testowe,Poznań,,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Paweł,Kowalczyk,1961-07-28,M,85032405291,,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Joanna,Wójcik,1963-11-09,F,123,Laboratorium Testowe,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Elżbieta,Kowalczyk,1991-11-14,F,93101901438,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Maria,Lewandowski,1998-08-16,F,93032102132,Laboratorium Testowe,Poznań,,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Krzysztof,Kowalczyk,2004-12-07,M,86061706053,,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Adam,Kowalski,1992-02-24,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Anna,Kowalczyk,1960-06-28,F,88060504350,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Adam,Zieliński,1962-04-26,M,93100101509,Laboratorium Testowe,Poznań,,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Adam,Kamiński,1994-05-10,M,99052302607,,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Małgorzata,Wiśniewski,1965-12-09,F,123,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Maria,Kamiński,1963-12-12,F,93021405142,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Piotr,Kowalczyk,1980-03-21,M,86050406049,Laboratorium Testowe,Poznań,,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Maria,Kowalczyk,1964-06-02,F,90101706862,,Poznań,Wielkopolskie,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Agnieszka,Zieliński,1972-05-06,F,123,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
+Magdalena,Kamiński,1978-11-13,F,84121904660,Laboratorium Testowe,Poznań,Wielkopolskie,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Katarzyna,Lewandowski,1982-03-14,F,91101405780,Laboratorium Testowe,Poznań,,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Maria,Kowalski,1960-11-22,F,90091804306,,Poznań,Wielkopolskie,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Joanna,Lewandowski,1969-07-30,F,123,Laboratorium Testowe,Poznań,Wielkopolskie,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Katarzyna,Kowalczyk,1973-02-26,F,83051401228,Laboratorium Testowe,Poznań,Wielkopolskie,TSH,TSH,Hormony,80.0,uIU/mL,0.27,4.2
+Agnieszka,Wójcik,1972-05-20,F,92110904512,Laboratorium Testowe,Poznań,,WBC,Leukocyty,Morfologia,80.0,10^9/L,4.0,10.0
+Adam,Kowalczyk,1983-06-19,M,81060108985,,Poznań,Wielkopolskie,HGB,Hemoglobina,Morfologia,80.0,g/dL,13.0,17.0
+Piotr,Kamiński,1976-02-08,M,123,Laboratorium Testowe,Poznań,Wielkopolskie,GLU,Glukoza,Biochemia,80.0,mg/dL,70.0,99.0
