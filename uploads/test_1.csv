@@ -1,6 +1,0 @@
-imie,nazwisko,data_urodzenia,plec,pesel,placowka_nazwa,miasto,kod_badania,nazwa_badania,wynik,jednostka,norma_min,norma_max
-Jan,Kowalski,1985-05-12,M,85051212345,Szpital Wojewódzki,Olsztyn,GLU,Glukoza,95.5,mg/dL,70.0,99.0
-Anna,Nowak,1992-08-24,F,92082412345,Przychodnia Centrum,Warszawa,CHOL,Cholesterol,250.0,mg/dL,115.0,190.0
-Piotr,Zieliński,1978-11-03,M,78110312345,,Kraków,WBC,Leukocyty,7.5,10^9/L,4.0,10.0
-Maria,Wojcik,2001-02-15,F,01221512345,Szpital Wojewódzki,Olsztyn,GLU,Glukoza,BrakWyniku,mg/dL,70.0,99.0
-Stefan,Zalewski,1965-12-30,M,65123012345,Laboratorium ALFA,Gdańsk,HGB,Hemoglobina,11.2,g/dL,13.0,17.0
