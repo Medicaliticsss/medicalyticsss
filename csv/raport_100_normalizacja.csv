@@ -1,0 +1,101 @@
+imie,nazwisko,data_urodzenia,plec,pesel,placowka_nazwa,miasto,wojewodztwo,kod_badania,nazwa_badania,kategoria_badania,wynik,jednostka,norma_min,norma_max
+Piotr,Szymański,1992-12-08,M,98061508569,Szpital_Wojewódzki,Olsztyn,warminsko-mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Maria,Woźniak,2000-02-18,F,88080905256,Szpital Wojewódzki,Olsztyn_,warminsko-mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Adam,Zieliński,1980-12-02,M,87071206519,Szpital Wojewódzki,olsztyn,WARMINSKO MAZURSKIE,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Jakub,Wójcik,1981-12-30,M,84011602403,Szpital Wojewódzki, OLSZTYN,warminsko-mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Tomasz,Zieliński,1966-11-04,M,89101404607,SZPITAL WOJEWODZKI,Olsztyn,warminsko-mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Barbara,Kowalczyk,1975-08-09,F,80060804778,Szpital Wojewódzki,olsztyn,warminsko-mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Marcin,Zieliński,1961-01-07,M,97022101963, Szpital Wojewodzki ,Olsztyn_,warminsko-mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Krzysztof,Wójcik,1997-07-31,M,98102006749,Szpital_Wojewódzki,olsztyn,WARMINSKO MAZURSKIE,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Piotr,Kowalczyk,1981-03-25,M,84101602287,Szpital Wojewódzki,Olsztyn_,Warminsko-Mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Barbara,Wiśniewski,1982-05-19,F,98020306574, Szpital Wojewodzki , OLSZTYN,warminsko-mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Anna,Wójcik,2003-05-14,F,82011402700,Szpital Wojewódzki,Olsztyn,warminsko-mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Ewa,Lewandowski,1993-03-21,F,88081904178,Szpital Wojewódzki,Olsztyn_,Warminsko-Mazurskie,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Adam,Lewandowski,1991-07-05,M,99032407171,szpital wojewódzki,olsztyn,WARMINSKO MAZURSKIE,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Paweł,Kowalczyk,1982-04-12,M,88052206177,Szpital_Wojewódzki,Olsztyn,warminsko-mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Ewa,Szymański,1979-10-11,F,82012707102,Szpital Wojewódzki,Olsztyn,Warminsko-Mazurskie,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Maria,Wójcik,2001-09-25,F,91090405368,szpital wojewódzki,Olsztyn,warminsko-mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Elżbieta,Kowalczyk,1997-04-20,F,80051403150,szpital wojewódzki,Olsztyn,WARMINSKO MAZURSKIE,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Adam,Wiśniewski,1980-02-11,M,87030904717,Szpital_Wojewódzki,Olsztyn,warminsko-mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Anna,Kowalczyk,1995-11-26,F,87011008970,SZPITAL WOJEWODZKI,Olsztyn_,warminsko-mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Małgorzata,Woźniak,1986-06-17,F,81061108538,szpital wojewódzki, OLSZTYN,warminsko-mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Magdalena,Kowalski,1993-02-13,F,99010208924,Szpital_Wojewódzki,Olsztyn,warminsko-mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Joanna,Woźniak,1979-02-12,F,80021102214, Szpital Wojewodzki ,Olsztyn,warminsko-mazurskie,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Magdalena,Kowalczyk,1995-06-05,F,83101506830,SZPITAL WOJEWODZKI, OLSZTYN,Warminsko-Mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Jakub,Woźniak,1992-03-25,M,86122608005,Szpital Wojewódzki, OLSZTYN,warminsko-mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Małgorzata,Lewandowski,1995-06-29,F,86091709784,Szpital Wojewódzki,Olsztyn,WARMINSKO MAZURSKIE,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Marcin,Kowalski,2005-01-21,M,91051606323,SZPITAL WOJEWODZKI, OLSZTYN,WARMINSKO MAZURSKIE,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Tomasz,Szymański,1967-06-26,M,92120404577,Szpital Wojewódzki, OLSZTYN,warminsko-mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Magdalena,Kowalski,1961-09-28,F,98031002756,SZPITAL WOJEWODZKI,Olsztyn_,WARMINSKO MAZURSKIE,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Ewa,Wiśniewski,1984-08-02,F,84121804364,Szpital Wojewódzki, OLSZTYN,Warminsko-Mazurskie,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Paweł,Nowak,1981-03-12,M,86092405803,SZPITAL WOJEWODZKI,Olsztyn_,Warminsko-Mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Małgorzata,Zieliński,1989-06-23,F,97040101832,Szpital Wojewódzki, OLSZTYN,warminsko-mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Tomasz,Lewandowski,1974-10-27,M,83120507589,Szpital_Wojewódzki,Olsztyn_,Warminsko-Mazurskie,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Anna,Kamiński,1967-04-06,F,94030809716, Szpital Wojewodzki ,Olsztyn,warminsko-mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Katarzyna,Woźniak,1999-01-12,F,81032805308,Szpital Wojewódzki, OLSZTYN,warminsko-mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Krzysztof,Kamiński,2000-07-19,M,97102004657,szpital wojewódzki, OLSZTYN,WARMINSKO MAZURSKIE,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Michał,Woźniak,1965-12-18,M,89091701893,SZPITAL WOJEWODZKI, OLSZTYN,WARMINSKO MAZURSKIE,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Marcin,Lewandowski,1978-04-21,M,95010401085,SZPITAL WOJEWODZKI,Olsztyn_,warminsko-mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Ewa,Zieliński,2002-05-04,F,89071707946,szpital wojewódzki, OLSZTYN,Warminsko-Mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Ewa,Zieliński,1991-06-06,F,96090904944,Szpital Wojewódzki, OLSZTYN,Warminsko-Mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Anna,Zieliński,1977-04-09,F,87060608624,szpital wojewódzki,olsztyn,Warminsko-Mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Katarzyna,Zieliński,1974-03-16,F,84051305606, Szpital Wojewodzki ,Olsztyn,Warminsko-Mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Anna,Zieliński,1974-06-06,F,83111205108,SZPITAL WOJEWODZKI,Olsztyn,Warminsko-Mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Maria,Wiśniewski,2005-08-19,F,97021309884,Szpital_Wojewódzki,Olsztyn,WARMINSKO MAZURSKIE,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Barbara,Nowak,2005-08-27,F,87071703708,Szpital_Wojewódzki,olsztyn,Warminsko-Mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Joanna,Kamiński,1980-06-14,F,82121806724,Szpital_Wojewódzki,Olsztyn,Warminsko-Mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Marcin,Szymański,1967-07-08,M,82012705053,Szpital_Wojewódzki,Olsztyn_,warminsko-mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Krzysztof,Kamiński,1998-08-18,M,83122005411,szpital wojewódzki, OLSZTYN,Warminsko-Mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Andrzej,Lewandowski,2000-03-15,M,86110106891,Szpital_Wojewódzki, OLSZTYN,WARMINSKO MAZURSKIE,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Jan,Kowalczyk,1995-10-13,M,86090806949,Szpital_Wojewódzki,Olsztyn,Warminsko-Mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Małgorzata,Kamiński,2003-04-25,F,92120503244,szpital wojewódzki,Olsztyn_,WARMINSKO MAZURSKIE,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Barbara,Zieliński,2005-12-30,F,91040908414,Szpital_Wojewódzki,Olsztyn,warminsko-mazurskie,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Magdalena,Kowalski,2002-10-21,F,95050909916,Szpital_Wojewódzki, OLSZTYN,warminsko-mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Elżbieta,Lewandowski,1987-06-10,F,85042505192,szpital wojewódzki,olsztyn,warminsko-mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Maria,Nowak,1976-06-01,F,93032209728,szpital wojewódzki, OLSZTYN,warminsko-mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Maria,Zieliński,1986-07-24,F,95050409988, Szpital Wojewodzki ,olsztyn,WARMINSKO MAZURSKIE,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Jakub,Lewandowski,1980-09-09,M,97090401137,Szpital Wojewódzki, OLSZTYN,WARMINSKO MAZURSKIE,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Katarzyna,Wiśniewski,1969-09-03,F,88102602000,SZPITAL WOJEWODZKI,Olsztyn_,WARMINSKO MAZURSKIE,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Joanna,Lewandowski,1982-04-18,F,83011402092,Szpital Wojewódzki,Olsztyn_,WARMINSKO MAZURSKIE,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Marcin,Lewandowski,1994-12-04,M,91111505303,szpital wojewódzki,Olsztyn,Warminsko-Mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Jakub,Kamiński,1979-10-04,M,99010101745,SZPITAL WOJEWODZKI,Olsztyn,Warminsko-Mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Elżbieta,Wójcik,1998-04-27,F,94060809678,Szpital_Wojewódzki,Olsztyn_,Warminsko-Mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Jan,Wiśniewski,1966-04-18,M,95050207933,Szpital Wojewódzki,Olsztyn_,Warminsko-Mazurskie,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Marcin,Wiśniewski,2004-07-11,M,82120103841,Szpital_Wojewódzki,Olsztyn,warminsko-mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Ewa,Wiśniewski,1981-05-17,F,89110302134,Szpital_Wojewódzki, OLSZTYN,Warminsko-Mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Magdalena,Lewandowski,1963-05-22,F,92060808514, Szpital Wojewodzki ,olsztyn,warminsko-mazurskie,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Maria,Wiśniewski,1972-09-17,F,86041803580,Szpital Wojewódzki,olsztyn,WARMINSKO MAZURSKIE,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Małgorzata,Lewandowski,1965-12-11,F,81101306594,Szpital Wojewódzki, OLSZTYN,Warminsko-Mazurskie,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Jan,Nowak,1965-06-25,M,85042105109,SZPITAL WOJEWODZKI,olsztyn,warminsko-mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Krzysztof,Zieliński,1999-10-28,M,84050801283, Szpital Wojewodzki ,Olsztyn_,warminsko-mazurskie,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Krzysztof,Zieliński,1993-04-07,M,81060405803,Szpital Wojewódzki,Olsztyn_,WARMINSKO MAZURSKIE,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Agnieszka,Woźniak,1962-12-29,F,82022309754,Szpital_Wojewódzki,olsztyn,warminsko-mazurskie,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Andrzej,Kowalczyk,1988-03-04,M,81011101141,Szpital Wojewódzki,Olsztyn_,warminsko-mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Piotr,Wójcik,1971-08-10,M,97111709565, Szpital Wojewodzki ,olsztyn,Warminsko-Mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Katarzyna,Woźniak,1992-03-22,F,83050204192,Szpital_Wojewódzki,olsztyn,warminsko-mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Anna,Kowalski,1973-08-13,F,99051002616,Szpital Wojewódzki, OLSZTYN,Warminsko-Mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Barbara,Kamiński,1962-05-01,F,83052002690,szpital wojewódzki, OLSZTYN,WARMINSKO MAZURSKIE,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Adam,Kowalczyk,1992-02-08,M,98121106871, Szpital Wojewodzki ,Olsztyn_,WARMINSKO MAZURSKIE,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Anna,Kowalczyk,1989-08-28,F,80010603828, Szpital Wojewodzki ,Olsztyn_,warminsko-mazurskie,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Jan,Kowalczyk,1964-06-21,M,83011705461,Szpital_Wojewódzki,olsztyn,Warminsko-Mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Elżbieta,Lewandowski,1998-07-28,F,91022706866,SZPITAL WOJEWODZKI,olsztyn,WARMINSKO MAZURSKIE,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Agnieszka,Zieliński,1978-08-20,F,88060203512,SZPITAL WOJEWODZKI, OLSZTYN,WARMINSKO MAZURSKIE,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Małgorzata,Lewandowski,1966-12-10,F,95032205624,Szpital Wojewódzki,olsztyn,WARMINSKO MAZURSKIE,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Andrzej,Kowalski,1977-11-25,M,91020202011,Szpital_Wojewódzki, OLSZTYN,WARMINSKO MAZURSKIE,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Jan,Wiśniewski,1979-03-16,M,96050505303,szpital wojewódzki,Olsztyn_,WARMINSKO MAZURSKIE,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Jan,Lewandowski,1977-12-18,M,99082703145,Szpital Wojewódzki,Olsztyn_,WARMINSKO MAZURSKIE,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Michał,Szymański,1979-05-13,M,91051609713,Szpital_Wojewódzki,Olsztyn_,warminsko-mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Paweł,Zieliński,1978-08-24,M,92060407133,szpital wojewódzki,Olsztyn_,warminsko-mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Jakub,Nowak,1987-03-18,M,82092508855,Szpital_Wojewódzki,olsztyn,warminsko-mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Tomasz,Lewandowski,1975-03-12,M,88022107077,Szpital_Wojewódzki, OLSZTYN,warminsko-mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Marcin,Lewandowski,1984-12-03,M,93020303701,Szpital Wojewódzki,Olsztyn_,warminsko-mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Magdalena,Kamiński,1996-11-25,F,81040401512,Szpital_Wojewódzki, OLSZTYN,warminsko-mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Marcin,Zieliński,2005-06-06,M,89071101627,SZPITAL WOJEWODZKI,Olsztyn,Warminsko-Mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Tomasz,Wójcik,1993-05-02,M,85010302453,Szpital Wojewódzki,Olsztyn,Warminsko-Mazurskie,WBC,Leukocyty,Morfologia,10.0,10^9/L,5.0,15.0
+Paweł,Woźniak,1967-12-06,M,85080408119,szpital wojewódzki,olsztyn,warminsko-mazurskie,HGB,Hemoglobina,Morfologia,10.0,g/dL,5.0,15.0
+Tomasz,Woźniak,1979-05-30,M,85052804831, Szpital Wojewodzki , OLSZTYN,WARMINSKO MAZURSKIE,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Jan,Zieliński,1992-11-15,M,98061302699,Szpital Wojewódzki,Olsztyn_,warminsko-mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Paweł,Szymański,1993-05-20,M,96021203983,SZPITAL WOJEWODZKI,Olsztyn_,Warminsko-Mazurskie,GLU,Glukoza,Biochemia,10.0,mg/dL,5.0,15.0
+Adam,Kowalczyk,2003-12-19,M,82102406803,SZPITAL WOJEWODZKI,Olsztyn,warminsko-mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
+Katarzyna,Kowalski,1981-04-23,F,85101207072,Szpital_Wojewódzki,Olsztyn_,WARMINSKO MAZURSKIE,CHOL,Cholesterol,Lipidogram,10.0,mg/dL,5.0,15.0
+Ewa,Lewandowski,1960-07-26,F,97040601318,Szpital_Wojewódzki,olsztyn,Warminsko-Mazurskie,TSH,TSH,Hormony,10.0,uIU/mL,5.0,15.0
