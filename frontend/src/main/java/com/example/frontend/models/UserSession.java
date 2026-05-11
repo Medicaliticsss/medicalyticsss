@@ -1,4 +1,4 @@
-package com.example.frontend;
+package com.example.frontend.models;
 
 public class UserSession {
     private static UserSession instance;
