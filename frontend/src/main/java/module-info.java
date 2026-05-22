@@ -8,4 +8,6 @@ module com.example.frontend {
 
     opens com.example.frontend to javafx.fxml, com.google.gson;
     exports com.example.frontend;
+    exports com.example.frontend.models;
+    opens com.example.frontend.models to com.google.gson, javafx.fxml;
 }
