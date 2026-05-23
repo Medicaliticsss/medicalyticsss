@@ -12,11 +12,11 @@ Projekt składa się z serwera (Backend) oraz aplikacji okienkowej (Frontend). A
 
 ### Krok 1: Przygotowanie bazy danych (Ważne po aktualizacji kodu!)
 Zarządzanie strukturą bazy danych w projekcie przejął **Flyway**. Zanim uruchomisz aplikację po pobraniu nowości z GitHuba, musisz zresetować swoją lokalną bazę:
-1. Otwórz swój program do obsługi bazy (korzystamy z HeidiSQL).
+1. Otwórz swój program do obsługi bazy (np. HeidiSQL / DBeaver).
 2. Wykonaj poniższe polecenia, aby uzyskać czystą kartę:
 
-DROP DATABASE medicalytics;
-CREATE DATABASE medicalytics;
+   DROP DATABASE medicalytics;
+   CREATE DATABASE medicalytics;
 
 3. W IntelliJ otwórz prawy panel **Maven**.
 4. Rozwiń `backend` -> `Lifecycle`, a następnie kliknij dwukrotnie **`clean`**, a zaraz po nim **`compile`**. (To gwarantuje, że skrypty migracyjne skopiują się do odpowiedniego folderu).
@@ -25,7 +25,7 @@ CREATE DATABASE medicalytics;
 1. W IntelliJ przejdź do folderu `backend/src/main/java/com/medicalyticsss/backend`.
 2. Otwórz klasę `Application` (główną klasę Spring Boot).
 3. Uruchom metodę `main` (zielony trójkąt "Run").
-4. W konsoli powinieneś zobaczyć komunikat o wymuszeniu uruchomienia Flywaya (skrypty same zbudują tabele w pustej bazie) oraz o nasłuchiwaniu Tomcata na porcie `8080`. **NIE ZAMYKAJ TEJ KONSOLI.**
+4. W konsoli powinieneś zobaczyć komunikat o wymuszeniu uruchomienia Flywaya (skrypty same zbudują tabele w pustej bazie). Dodatkowo uruchomi się **DictionarySeeder**, który automatycznie załaduje twardy słownik 100 badań do bazy. Tomcat rozpocznie nasłuchiwanie na porcie `8080`. **NIE ZAMYKAJ TEJ KONSOLI.**
 
 ### Krok 3: Uruchomienie Aplikacji Okienkowej (Frontend)
 1. Otwórz PRAWY panel **Maven** w IntelliJ.
@@ -64,7 +64,7 @@ Moduł obsługujący procesy hurtowni danych (Extract, Transform, Load) oraz bez
 * **Metoda:** `POST`
 * **Typ zawartości:** `multipart/form-data`
 * **Parametry:** `file` (wymagany plik z rozszerzeniem .csv)
-* **Działanie:** * Zapisuje plik fizycznie w folderze `uploads/`.
+* **Działanie:** * Zapisuje plik fizycznie w folderze `uploads/` (folder jest ignorowany w Git). Oficjalne dane testowe znajdują się w repozytorium w folderze `csv/`.
   * **Obsługa kolizji:** Jeśli plik o danej nazwie istnieje, serwer automatycznie inkrementuje nazwę (np. `plik(1).csv`), zapobiegając nadpisaniu danych na dysku.
   * Tworzy rekord w `files_history` ze statusem `UPLOADED` oraz zapisuje dokładny czas operacji (`uploadTime`). Przypisuje plik do zalogowanego użytkownika.
 * **Odpowiedź:** `200 OK` (informacja o pomyślnym wgraniu i wygenerowanej nazwie).
@@ -75,7 +75,7 @@ Moduł obsługujący procesy hurtowni danych (Extract, Transform, Load) oraz bez
 * **Działanie:** * Odpytuje bazę danych o wszystkie rekordy zarejestrowane w tabeli `files_history`.
   * Mapuje dane na format JSON, przesyłając kluczowe pola: `id`, `fileName`, `status` oraz `uploadTime`.
   * Służy jako główne źródło danych dla interfejsu użytkownika (zasilanie komponentu ListView). Aplikacja frontendowa filtruje pliki ze statusem `DELETED`.
-* **Odpowiedź:** `200 OK` (Zwraca listę JSON, np. `[{"id": 1, "fileName": "dane.csv", "status": "UPLOADED", "uploadTime": "2026-04-26T14:05:30.123"}]`).
+* **Odpowiedź:** `200 OK` (Zwraca listę JSON, np. `[{"id": 1, "fileName": "dane.csv", "status": "UPLOADED", "uploadTime": "2026-05-23T14:05:30.123"}]`).
 
 #### Podgląd zawartości pliku (Preview)
 * **URL:** `/api/files/{id}/preview`
@@ -89,10 +89,10 @@ Moduł obsługujący procesy hurtowni danych (Extract, Transform, Load) oraz bez
 * **Metoda:** `POST`
 * **Parametr URL:** `{id}` - ID pliku z tabeli `files_history`.
 * **Działanie:** * Czyta wgrany plik wiersz po wierszu.
+  * **Ścisła walidacja (Strict Validation):** System weryfikuje kompletność każdego wiersza. Brak chociażby jednego pola skutkuje odrzuceniem konkretnego rekordu i logowaniem go do tabeli błędów.
   * Zabezpiecza wrażliwe dane: zamienia PESEL na skrót SHA-256.
-  * Realizuje operacje "Upsert" na wymiarach: wyszukuje lub tworzy pacjentów (`dim_patient`), placówki (`dim_facility`) i słowniki badań (`dim_test_type`).
-  * Waliduje typy liczbowe (zamiana `,` na `.`, precyzja `BigDecimal`).
-  * Przelicza odchylenia od norm medycznych i ustawia flagę `is_abnormal`.
+  * **Normalizacja MDM:** Nazwy placówek, miast i województw przed zapisem są formatowane (Title Case, usuwanie znaków specjalnych i podwójnych spacji), aby zapobiec duplikatom w wymiarze `dim_facility`.
+  * **Twardy Słownik (MDM):** Wymiar `dim_test_type` jest nienaruszalny. Pliki CSV dostarczają tylko wyniki pacjenta – do ewaluacji anomalii używane są wyłącznie twarde normy załadowane do bazy przez Seeder.
   * Sukcesy dopisuje do tabeli `fact_test_results`, a anomalie odrzuca do tabeli `processing_errors`.
   * Aktualizuje finalny status pliku (`SUCCESS`, `PARTIAL_SUCCESS` lub `ERROR`).
 * **Odpowiedź:** `200 OK` (`"Proces przetwarzania zakończony. Sprawdź status pliku."`)
@@ -109,7 +109,7 @@ Moduł obsługujący procesy hurtowni danych (Extract, Transform, Load) oraz bez
 ### Moduł Raportów i Statystyk (`/api/reports`)
 Moduł agregujący zanonimizowane dane medyczne w celu zasilania wykresów i kart KPI w aplikacji klienckiej.
 
-#### Podsumowanie globalne (MVP)
+#### Podsumowanie globalne
 * **URL:** `/api/reports/summary`
 * **Metoda:** `GET`
 * **Działanie:** Wykonuje szybkie zapytania agregujące (`COUNT`) na poziomie bazy danych w tabeli `fact_test_results`. Zlicza łączną liczbę wykonanych badań oraz proporcje wyników mieszczących się w normie w stosunku do wykrytych anomalii medycznych.
@@ -118,5 +118,8 @@ Moduł agregujący zanonimizowane dane medyczne w celu zasilania wykresów i kar
 ---
 
 #### Wymagana Struktura Pliku CSV
-Aby walidator poprawnie przetworzył plik, musi on zawierać wartości oddzielone przecinkami (pierwszy wiersz z nagłówkami jest ignorowany) w dokładnie takiej kolejności:
-`imie, nazwisko, data_urodzenia, plec, pesel, placowka_nazwa, miasto, kod_badania, nazwa_badania, wynik, jednostka, norma_min, norma_max`
+Aby parser poprawnie przetworzył plik (zgodnie z mechanizmem Strict Validation), wiersze muszą zawierać wartości oddzielone przecinkami w dokładnie takiej kolejności:
+
+`imie, nazwisko, data_urodzenia, plec, pesel, placowka_nazwa, miasto, wojewodztwo, kod_badania, nazwa_badania, kategoria_badania, wynik, jednostka, norma_min, norma_max`
+
+> **Ważne:** Wszystkie 15 pól jest absolutnie wymagane. Puste wartości w kluczowych polach zrzucą rekord do logów jako błąd, skutkując statusem przetwarzania `PARTIAL_SUCCESS`. Ze względów bezpieczeństwa (MDM) wartości `jednostka`, `norma_min` i `norma_max` z pliku CSV nie nadpisują twardego słownika bazy danych.
