@@ -3,6 +3,7 @@ package com.medicalyticsss.backend.service;
 import com.medicalyticsss.backend.model.*;
 import com.medicalyticsss.backend.repository.*;
 import com.medicalyticsss.backend.util.HashUtils;
+import com.medicalyticsss.backend.util.StringSanitizerUtils;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -90,7 +91,7 @@ public class CsvProcessingService {
 
     private void processSingleRecord(CSVRecord record, FileHistory fileHistory) {
 
-        // 1. WYCIĄGANIE DANYCH Z CSV (Dodano nowe kolumny)
+        // 1. WYCIĄGANIE DANYCH Z CSV
         String name = record.get("imie");
         String lastName = record.get("nazwisko");
         String birthDateStr = record.get("data_urodzenia");
@@ -98,16 +99,16 @@ public class CsvProcessingService {
         String pesel = record.get("pesel");
         String facilityNameStr = record.get("placowka_nazwa");
         String cityStr = record.get("miasto");
-        String provinceStr = record.get("wojewodztwo"); // <--- NOWE
+        String provinceStr = record.get("wojewodztwo");
         String testCodeStr = record.get("kod_badania");
         String testNameStr = record.get("nazwa_badania");
-        String categoryNameStr = record.get("kategoria_badania"); // <--- NOWE
+        String categoryNameStr = record.get("kategoria_badania");
         String unitStr = record.get("jednostka");
         String resultStr = record.get("wynik");
         String normMinStr = record.get("norma_min");
         String normMaxStr = record.get("norma_max");
 
-        // 2. ŚCISŁA WALIDACJA (ŻELAZNA BRAMKA) - Rozszerzona o nowe pola
+        // 2. ŚCISŁA WALIDACJA (ŻELAZNA BRAMKA)
         if (name == null || name.isBlank()) throw new IllegalArgumentException("Brak imienia");
         if (lastName == null || lastName.isBlank()) throw new IllegalArgumentException("Brak nazwiska");
         if (birthDateStr == null || birthDateStr.isBlank()) throw new IllegalArgumentException("Brak daty urodzenia");
@@ -115,10 +116,10 @@ public class CsvProcessingService {
         if (pesel == null || pesel.isBlank() || pesel.length() != 11) throw new IllegalArgumentException("Nieprawidłowy lub brakujący numer PESEL");
         if (facilityNameStr == null || facilityNameStr.isBlank()) throw new IllegalArgumentException("Brak nazwy placówki");
         if (cityStr == null || cityStr.isBlank()) throw new IllegalArgumentException("Brak miasta placówki");
-        if (provinceStr == null || provinceStr.isBlank()) throw new IllegalArgumentException("Brak województwa placówki"); // <--- NOWE
+        if (provinceStr == null || provinceStr.isBlank()) throw new IllegalArgumentException("Brak województwa placówki");
         if (testCodeStr == null || testCodeStr.isBlank()) throw new IllegalArgumentException("Brak kodu badania");
         if (testNameStr == null || testNameStr.isBlank()) throw new IllegalArgumentException("Brak nazwy badania");
-        if (categoryNameStr == null || categoryNameStr.isBlank()) throw new IllegalArgumentException("Brak kategorii badania"); // <--- NOWE
+        if (categoryNameStr == null || categoryNameStr.isBlank()) throw new IllegalArgumentException("Brak kategorii badania");
         if (unitStr == null || unitStr.isBlank()) throw new IllegalArgumentException("Brak jednostki badania");
         if (resultStr == null || resultStr.isBlank()) throw new IllegalArgumentException("Brak wyniku badania");
         if (normMinStr == null || normMinStr.isBlank()) throw new IllegalArgumentException("Brak normy minimalnej");
@@ -149,64 +150,48 @@ public class CsvProcessingService {
             return patientRepository.save(newPatient);
         });
 
-        // 4. PARSOWANIE I ZAPIS PLACÓWKI (Z dodanym Smart Update dla starego województwa)
-        Facility facility = facilityRepository.findByFacilityNameAndCity(facilityNameStr, cityStr).orElse(null);
+        // 4. SANITIZACJA I ZAPIS PLACÓWKI (MDM)
+        String sanitizedFacilityName = StringSanitizerUtils.sanitize(facilityNameStr);
+        String sanitizedCity = StringSanitizerUtils.sanitize(cityStr);
+        String sanitizedProvince = StringSanitizerUtils.sanitize(provinceStr);
+
+        Facility facility = facilityRepository.findByFacilityNameAndCity(sanitizedFacilityName, sanitizedCity).orElse(null);
         if (facility == null) {
             facility = new Facility();
-            facility.setFacilityName(facilityNameStr);
-            facility.setCity(cityStr);
-            facility.setProvince(provinceStr); // Przypisanie wymaganego województwa
-            facility = facilityRepository.save(facility);
-        } else if (facility.getProvince() == null) {
-            // Placówka istnieje, ale ze starych wgrań gdzie województwo było NULL - naprawiamy to
-            facility.setProvince(provinceStr);
+            facility.setFacilityName(sanitizedFacilityName);
+            facility.setCity(sanitizedCity);
+            facility.setProvince(sanitizedProvince);
             facility = facilityRepository.save(facility);
         }
 
-        // 5. PARSOWANIE NORM
-        BigDecimal normMin;
-        BigDecimal normMax;
+        // 5. PARSOWANIE NORM Z PLIKU (Tylko po to, by założyć badanie po raz pierwszy, jeśli go nie ma)
+        BigDecimal parsedNormMin;
+        BigDecimal parsedNormMax;
         try {
-            normMin = new BigDecimal(normMinStr.replace(",", "."));
-            normMax = new BigDecimal(normMaxStr.replace(",", "."));
+            parsedNormMin = new BigDecimal(normMinStr.replace(",", "."));
+            parsedNormMax = new BigDecimal(normMaxStr.replace(",", "."));
         } catch (Exception e) {
             throw new IllegalArgumentException("Błąd formatu liczbowego w normach");
         }
 
-        // 6. WALIDACJA I ZAPIS SŁOWNIKA BADAŃ
+        // 6. WALIDACJA I ZAPIS SŁOWNIKA BADAŃ (TWARDY SŁOWNIK)
+        String sanitizedTestName = StringSanitizerUtils.sanitize(testNameStr);
+        String sanitizedCategoryName = StringSanitizerUtils.sanitize(categoryNameStr);
+
         TestType testType = testTypeRepository.findByTestCode(testCodeStr).orElse(null);
 
         if (testType == null) {
+            // Inicjalizacja słownika w bazie, jeśli kodu badania jeszcze nie było
             testType = new TestType();
             testType.setTestCode(testCodeStr);
-            testType.setTestName(testNameStr);
-            testType.setCategoryName(categoryNameStr); // Przypisanie wymaganej kategorii
+            testType.setTestName(sanitizedTestName);
+            testType.setCategoryName(sanitizedCategoryName);
             testType.setUnit(unitStr);
-            testType.setNormMin(normMin);
-            testType.setNormMax(normMax);
+            testType.setNormMin(parsedNormMin);
+            testType.setNormMax(parsedNormMax);
             testType = testTypeRepository.save(testType);
-        } else {
-            // Smart Update - aktualizuje tylko wtedy, gdy starszy wpis miał w tych miejscach NULL
-            boolean needsUpdate = false;
-
-            if (testType.getNormMin() == null) {
-                testType.setNormMin(normMin);
-                testType.setNormMax(normMax);
-                needsUpdate = true;
-            }
-            if (testType.getUnit() == null) {
-                testType.setUnit(unitStr);
-                needsUpdate = true;
-            }
-            if (testType.getCategoryName() == null) {
-                testType.setCategoryName(categoryNameStr);
-                needsUpdate = true;
-            }
-
-            if (needsUpdate) {
-                testType = testTypeRepository.save(testType);
-            }
         }
+        // USUNIĘTO Smart Update! Jeśli `testType` istnieje, kompletnie ignorujemy normy i jednostki z pliku CSV.
 
         // 7. PARSOWANIE WYNIKÓW
         BigDecimal resultValue;
@@ -216,11 +201,14 @@ public class CsvProcessingService {
             throw new IllegalArgumentException("Wynik badania nie jest prawidłową liczbą: " + resultStr);
         }
 
-        // 8. CZY WYNIK JEST POZA NORMĄ?
+        // 8. CZY WYNIK JEST POZA NORMĄ? (Używamy norm z BAZY, a nie z CSV!)
+        BigDecimal dbNormMin = testType.getNormMin();
+        BigDecimal dbNormMax = testType.getNormMax();
+
         boolean isAbnormal = false;
-        if (resultValue.compareTo(normMin) < 0) {
+        if (dbNormMin != null && resultValue.compareTo(dbNormMin) < 0) {
             isAbnormal = true; // zbyt niski
-        } else if (resultValue.compareTo(normMax) > 0) {
+        } else if (dbNormMax != null && resultValue.compareTo(dbNormMax) > 0) {
             isAbnormal = true; // zbyt wysoki
         }
 
