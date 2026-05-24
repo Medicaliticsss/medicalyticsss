@@ -26,7 +26,24 @@ public class DashboardView {
         TextArea previewArea = new TextArea();
         previewArea.setEditable(false);
         VBox.setVgrow(previewArea, Priority.ALWAYS);
-        previewPanel.getChildren().addAll(previewLabel, previewArea);
+
+        // 1. Pole na błędy (usuwamy stąd tło, dajemy tylko czcionkę)
+        Label errorDetailsLabel = new Label();
+        errorDetailsLabel.setWrapText(true);
+        errorDetailsLabel.setStyle("-fx-text-fill: #FF3333; -fx-font-family: 'Consolas';");
+
+        // 2. NOWE: Opakowujemy Label w ScrollPane (suwak)
+        ScrollPane errorScrollPane = new ScrollPane(errorDetailsLabel);
+        errorScrollPane.setFitToWidth(true); // Ważne: dzięki temu tekst w Labelu nadal będzie się zawijał
+        errorScrollPane.setMaxHeight(180);   // Blokujemy wysokość, żeby NIE spychał TextArea!
+        errorScrollPane.setStyle("-fx-background: #2A1A1A; -fx-background-color: #2A1A1A; -fx-padding: 10; -fx-background-radius: 5;");
+
+        // Ukrywamy cały suwak, a nie tylko Label
+        errorScrollPane.setVisible(false);
+        errorScrollPane.setManaged(false);
+
+        // Dodajemy errorScrollPane zamiast samego Labela
+        previewPanel.getChildren().addAll(previewLabel, previewArea, errorScrollPane);
         HBox.setHgrow(previewPanel, Priority.ALWAYS);
 
         // --- PANEL PRAWY (STEROWANIE) ---
@@ -104,12 +121,32 @@ public class DashboardView {
         processBtn.setOnAction(e -> {
             FileItem selected = fileListView.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                FileService.processFile(selected.id).thenAccept(res -> Platform.runLater(() -> {
+                // Zapamiętujemy ID przetwarzanego pliku, zanim lista się odświeży
+                Long processedFileId = selected.id;
+
+                FileService.processFile(processedFileId).thenAccept(res -> Platform.runLater(() -> {
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setContentText(res);
                     alert.showAndWait();
-                    // Odśwież listę po przetworzeniu
-                    refreshBtn.fire();
+
+                    // Odświeżamy listę ręcznie, żeby po zakończeniu wywołać podgląd
+                    FileService.fetchFiles().thenAccept(files -> Platform.runLater(() -> {
+                        // Wrzucamy nowe pliki na listę
+                        fileListView.getItems().setAll(files);
+                        fileStatusLabel.setText("Zaktualizowano listę po przetwarzaniu.");
+
+                        // Szukamy naszego przetworzonego pliku na nowej liście
+                        for (FileItem item : files) {
+                            if (item.id.equals(processedFileId)) {
+                                // Zaznaczamy go ponownie na liście (żeby podświetlił się na niebiesko)
+                                fileListView.getSelectionModel().select(item);
+
+                                // Automatycznie "klikamy" przycisk podglądu!
+                                previewBtn.fire();
+                                break;
+                            }
+                        }
+                    }));
                 }));
             }
         });
@@ -121,6 +158,10 @@ public class DashboardView {
                 FileService.deleteFile(selected.id).thenAccept(res -> Platform.runLater(() -> {
                     fileStatusLabel.setText(res);
                     previewArea.clear();
+                    // NOWE: Ukrywamy i czyścimy panel z błędami po usunięciu pliku
+                    errorDetailsLabel.setVisible(false);
+                    errorDetailsLabel.setManaged(false);
+                    errorDetailsLabel.setText("");
                     refreshBtn.fire();
                 }));
             }
@@ -130,9 +171,46 @@ public class DashboardView {
         previewBtn.setOnAction(e -> {
             FileItem selected = fileListView.getSelectionModel().getSelectedItem();
             if (selected != null) {
+
+                // 1. Pobieranie normalnego podglądu tekstu
                 FileService.getFilePreview(selected.id).thenAccept(lines -> Platform.runLater(() -> {
                     previewArea.setText(String.join("\n", lines));
                 }));
+
+// 2. NOWE: Pobieranie błędów, jeśli plik ma status ERROR lub PARTIAL_SUCCESS
+                if ("ERROR".equals(selected.status) || "PARTIAL_SUCCESS".equals(selected.status)) {
+                    FileService.getFileErrors(selected.id).thenAccept(errors -> {
+                        Platform.runLater(() -> {
+                            if (errors != null && !errors.isEmpty()) {
+                                StringBuilder errorText = new StringBuilder();
+                                errorText.append("⚠️ Znaleziono błędy:\n\n");
+
+                                for (var error : errors) {
+                                    errorText.append("🔴 ");
+                                    if (error.errorRowNumber != null) {
+                                        errorText.append("[Wiersz ").append(error.errorRowNumber).append("] ");
+                                    }
+                                    errorText.append(error.errorMessage != null ? error.errorMessage : "Nieznany błąd");
+                                    if (error.rawLineData != null && !error.rawLineData.isBlank()) {
+                                        errorText.append("\n    └─ Błędne dane: ").append(error.rawLineData);
+                                    }
+                                    errorText.append("\n");
+                                }
+                                errorDetailsLabel.setText(errorText.toString());
+                            } else {
+                                errorDetailsLabel.setText("⚠️ Plik ma status ERROR, ale w bazie nie ma szczegółów.");
+                            }
+                            // TUTAJ: Pokazujemy cały przewijany panel, a nie tylko napis
+                            errorScrollPane.setVisible(true);
+                            errorScrollPane.setManaged(true);
+                        });
+                    });
+                } else {
+                    // TUTAJ: Ukrywamy cały przewijany panel, jeśli plik jest czysty
+                    errorScrollPane.setVisible(false);
+                    errorScrollPane.setManaged(false);
+                    errorDetailsLabel.setText("");
+                }
             }
         });
 

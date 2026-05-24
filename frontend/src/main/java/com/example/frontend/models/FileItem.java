@@ -5,6 +5,9 @@ public class FileItem {
     public String fileName;
     public String status;
     public String uploadTime;
+    public String content;
+
+    public ProcessingError processingError;
 
     // Nadpisujemy metodę toString, aby ListView na dashboardzie ładnie wyświetlało nazwy
     @Override
