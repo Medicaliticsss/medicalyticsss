@@ -107,13 +107,29 @@ Moduł obsługujący procesy hurtowni danych (Extract, Transform, Load) oraz bez
 ---
 
 ### Moduł Raportów i Statystyk (`/api/reports`)
-Moduł agregujący zanonimizowane dane medyczne w celu zasilania wykresów i kart KPI w aplikacji klienckiej.
+Moduł agregujący zanonimizowane dane medyczne w celu zasilania dynamicznych wykresów, tabel BI i kart KPI w aplikacji klienckiej.
 
 #### Podsumowanie globalne
 * **URL:** `/api/reports/summary`
 * **Metoda:** `GET`
 * **Działanie:** Wykonuje szybkie zapytania agregujące (`COUNT`) na poziomie bazy danych w tabeli `fact_test_results`. Zlicza łączną liczbę wykonanych badań oraz proporcje wyników mieszczących się w normie w stosunku do wykrytych anomalii medycznych.
 * **Odpowiedź:** `200 OK` (Zwraca obiekt JSON z podsumowaniem, np. `{"totalTests": 1500, "normalResults": 1350, "abnormalResults": 150}`).
+
+#### Kreator Raportów Analitycznych BI (OLAP)
+* **URL:** `/api/reports/custom`
+* **Metoda:** `POST`
+* **Typ zawartości:** `application/json`
+* **Parametry (Body):** Obiekt `CustomReportRequest` definiujący m.in. kolumny wymiarów (`selectColumns`), oś wartości (`aggregateColumn`), funkcję matematyczną (`operation` np. COUNT, SUM, AVG), sortowanie oraz listę dynamicznych filtrów (`filters` określające klauzulę WHERE).
+* **Działanie:** Wykorzystuje silnik JPA Criteria API do generowania w pełni dynamicznych zapytań bazodanowych. Automatycznie rozwiązuje relacje (LEFT JOIN) między tabelami i bezpiecznie mapuje filtry z użyciem wzorca Whitelist, zapobiegając ryzyku SQL Injection.
+* **Odpowiedź:** `200 OK` (Zwraca uniwersalną listę punktów danych, np. `[{"label": "Kobieta", "value": 152}, {"label": "Mężczyzna", "value": 98}]`).
+
+#### Pobieranie Surowych Danych (SELECT *)
+* **URL:** `/api/reports/raw`
+* **Metoda:** `POST`
+* **Typ zawartości:** `application/json`
+* **Parametry (Body):** Obiekt `CustomReportRequest` (do generowania zapytania brana jest pod uwagę wyłącznie tablica `filters`).
+* **Działanie:** Buduje zapytanie pobierające surowe wiersze z bazy danych z zastosowaniem zdefiniowanych przez użytkownika warunków (funkcja Drill-down). W celu optymalizacji pamięci RAM wynik jest limitowany do 500 rekordów. Każdy wiersz encji jest tłumaczony na dynamiczny słownik (Map) z zachowaniem kolejności oraz polskimi nazwami nagłówków.
+* **Odpowiedź:** `200 OK` (Zwraca listę słowników, np. `[{"ID Wyniku": 1, "Płeć": "MALE", "Miasto": "Olsztyn", "Czy Anomalia?": false}]`).
 
 ---
 
