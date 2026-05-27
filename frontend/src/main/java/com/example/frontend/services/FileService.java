@@ -1,12 +1,16 @@
 package com.example.frontend.services;
 
 import com.example.frontend.models.FileItem;
+import com.example.frontend.models.ProcessingError;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
+import java.util.Collections;
 import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.concurrent.CompletableFuture;
 
 public class FileService {
@@ -91,5 +95,26 @@ public class FileService {
                 .build();
         return AuthService.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(res -> new com.google.gson.Gson().fromJson(res.body(), String[].class));
+    }
+
+    // Metoda do wyswietlania bledow
+    public static CompletableFuture<List<ProcessingError>> getFileErrors(Long fileId) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://localhost:8080/api/files/" + fileId + "/errors"))
+                .GET()
+                .build();
+
+        return AuthService.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() == 200) {
+                        Type listType = new TypeToken<ArrayList<ProcessingError>>(){}.getType();
+                        return gson.fromJson(response.body(), listType);
+                    }
+                    return Collections.<ProcessingError>emptyList();
+                })
+                .exceptionally(e -> {
+                    e.printStackTrace();
+                    return Collections.<ProcessingError>emptyList();
+                });
     }
 }

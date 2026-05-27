@@ -2,7 +2,9 @@ package com.medicalyticsss.backend.controller;
 
 import com.medicalyticsss.backend.model.FileHistory;
 import com.medicalyticsss.backend.model.FileStatus;
+import com.medicalyticsss.backend.model.ProcessingError;
 import com.medicalyticsss.backend.repository.FileHistoryRepository;
+import com.medicalyticsss.backend.repository.ProcessingErrorRepository;
 import com.medicalyticsss.backend.service.CsvProcessingService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -23,10 +25,12 @@ public class FileController {
 
     private final FileHistoryRepository fileHistoryRepository;
     private final CsvProcessingService csvProcessingService;
+    private final ProcessingErrorRepository processingErrorRepository;
 
-    public FileController(FileHistoryRepository fileHistoryRepository, CsvProcessingService csvProcessingService) {
+    public FileController(FileHistoryRepository fileHistoryRepository, CsvProcessingService csvProcessingService, ProcessingErrorRepository processingErrorRepository) {
         this.fileHistoryRepository = fileHistoryRepository;
         this.csvProcessingService = csvProcessingService;
+        this.processingErrorRepository = processingErrorRepository;
     }
 
     // tu ja Natalia dodalam endpointa
@@ -168,5 +172,13 @@ public class FileController {
             e.printStackTrace();
             return ResponseEntity.status(500).body("Błąd podczas odczytu pliku: " + e.getMessage());
         }
+    }
+    @GetMapping("/{id}/errors")
+    public ResponseEntity<java.util.List<ProcessingError>> getFileErrors(@PathVariable Long id) {
+        if (!fileHistoryRepository.existsById(id)) {
+            return ResponseEntity.notFound().build();
+        }
+        java.util.List<ProcessingError> errors = processingErrorRepository.findByFileHistoryId(id);
+        return ResponseEntity.ok(errors);
     }
 }
