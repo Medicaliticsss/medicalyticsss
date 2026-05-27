@@ -1,15 +1,15 @@
 # Architektura Systemu Medicalytics
 
-Projekt opiera się na klasycznej architekturze **Klient-Serwer**, rozdzielając interfejs użytkownika od logiki biznesowej i bazy danych. System integruje moduł **Autoryzacji** z zaawansowanym modułem **ETL (Extract, Transform, Load)**, mechanizmami **Master Data Management (MDM)**, bezpiecznym systemem zarządzania plikami fizycznymi oraz **Modułem Raportowym**.
+Projekt opiera się na klasycznej architekturze **Klient-Serwer**, rozdzielając interfejs użytkownika od logiki biznesowej i bazy danych. System integruje moduł **Autoryzacji** z zaawansowanym modułem **ETL (Extract, Transform, Load)**, mechanizmami **Master Data Management (MDM)**, bezpiecznym systemem zarządzania plikami fizycznymi oraz **Dynamicznym Silnikiem Raportowym (Business Intelligence / OLAP)**.
 
 ## Komponenty Systemu
 
 ### 1. Frontend (Aplikacja Desktopowa kliencka)
-* **Technologia:** JavaFX (Java 17+).
+* **Technologia:** JavaFX (Java 17+) z wykorzystaniem biblioteki stylów **AtlantaFX**.
 * **Architektura:** Wzorzec **MVC (Model-View-Controller)**. Logika została zdywersyfikowana zgodnie z zasadą Single Responsibility:
-  * **Views:** Osobne klasy odpowiedzialne za renderowanie poszczególnych ekranów (GUI).
+  * **Views:** Osobne klasy odpowiedzialne za renderowanie poszczególnych ekranów. Obejmuje zaawansowane komponenty Data Grid oraz dynamiczne generatory wykresów (Bar, Pie, Line, Scatter) potrafiące budować swoje kolumny automatycznie na podstawie odbieranych słowników JSON.
   * **Services:** Separacja komunikacji sieciowej (wbudowany `HttpClient` asynchronicznie odpytujący REST API) oraz deserializacji JSON (Gson).
-  * **Models:** Obiekty DTO (np. `FileItem`, `ReportSummary`) służące do transferu danych.
+  * **Models:** Obiekty transferu danych (DTO, Records) oraz dynamiczne mapy służące do komunikacji z serwerem.
   * **ViewManager / Router:** Centralny zarządca scen i płynnej nawigacji (Single Page Application UI).
 
 ### 2. Backend (Serwer REST API)
@@ -19,19 +19,19 @@ Projekt opiera się na klasycznej architekturze **Klient-Serwer**, rozdzielając
 * **Zarządzanie Plikami:** * **Collision Resolver:** Automatycznie zapobiega nadpisywaniu plików na dysku serwera (np. poprzez inkrementację nazw: `plik(1).csv`), zachowując fizyczną integralność danych.
   * **Data Profiling:** Wykorzystuje odczyt strumieniowy (`Files.lines`) w Javie do bezpiecznego podglądu plików, chroniąc pamięć RAM serwera przed przeciążeniem gigabajtowymi plikami.
 * **Moduł ETL & MDM:** * **Strict Validation:** Klasa `CsvProcessingService` rygorystycznie waliduje kompletność danych wiersz po wierszu.
-  * **String Sanitization:** Czyści i standaryzuje (Title Case) dane tekstowe (np. nazwy placówek) "w locie", aby zapobiegać duplikatom.
+  * **String Sanitization:** Czyści i standaryzuje (Title Case) dane tekstowe "w locie", aby zapobiegać duplikatom.
   * Zapewnia anonimizację danych wrażliwych pacjentów (PESEL -> SHA-256).
 * **Dictionary Seeder:** Komponent ładujący twardy słownik referencyjny medycznych norm i badań podczas startu serwera, uodparniając bazę na błędne dane z zewnątrz.
-* **Moduł Raportowy (Analytics):** Agreguje przetworzone dane. Zwraca obiekty transferowe (Record DTO) i deleguje ciężkie obliczenia do silnika bazy danych (funkcje SQL agregujące), eliminując przeciążenie pamięci Javy.
+* **Silnik Raportowy BI (OLAP):** Zastąpił sztywne zapytania w pełni dynamicznym silnikiem opartym na **JPA Criteria API**. Wykorzystuje wzorzec **Whitelist** (Enumy), gwarantując całkowitą ochronę przed atakami SQL Injection. Samodzielnie rozwiązuje złączenia tabel (LEFT JOIN) oraz przetwarza rzutowanie typów dla zaawansowanych filtrów (klauzula WHERE).
 
 ### 3. Baza Danych (Model Gwiazdy + Moduł User)
 * **Technologia:** MariaDB zarządzana przez zautomatyzowane skrypty migracyjne **Flyway**.
 * **Struktura:**
   * **Użytkownicy:** Tabela `users` (id, username, password_hash).
-  * **Tabele Faktów:** `fact_test_results` (wyniki badań powiązane z wymiarami i plikiem źródłowym).
+  * **Tabele Faktów:** `fact_test_results` (centralny punkt modelu gwiazdy; wyniki badań powiązane z wymiarami i plikiem źródłowym).
   * **Tabele Wymiarów (Współdzielone):** * `dim_patient`, `dim_facility` – aktualizowane dynamicznie i transakcyjnie metodą *Upsert* (po uprzedniej normalizacji tekstów).
     * `dim_test_type` – **Twardy Słownik (MDM)**, zasilany wyłącznie przez system, służący jako ostateczne źródło prawdy dla norm badawczych.
-  * **Historia:** `files_history` – kluczowa relacja z `users` (kolumna `user_id`). Przechowuje finalną nazwę pliku, datę wgrania (`uploadTime`) oraz status cyklu życia (np. `UPLOADED`, `SUCCESS`, `DELETED`).
+  * **Historia:** `files_history` – kluczowa relacja z `users` (kolumna `user_id`). Przechowuje finalną nazwę pliku, datę wgrania (`uploadTime`) oraz status cyklu życia.
   * **Błędy:** `processing_errors` – szczegółowe logi anomalii w plikach chroniące przed przerwaniem globalnego procesu ETL.
 
 ## Przepływ Danych i Cykl Życia Systemu
@@ -51,8 +51,9 @@ Projekt opiera się na klasycznej architekturze **Klient-Serwer**, rozdzielając
 5. **Finalizacja:** Prawidłowe wiersze zasilają model gwiazdy, a błędne lądują w tabeli anomalii. Status pliku ulega zmianie na `SUCCESS` lub `PARTIAL_SUCCESS`.
 6. **Wycofanie Zmian (Rollback / Soft Delete):** Po usunięciu pliku przez użytkownika, system transakcyjnie kasuje wyniki i błędy (`@Modifying`) chroniąc spójność raportów. Wymiary i słowniki celowo nie są usuwane. Rekord pliku otrzymuje status `DELETED`.
 
-### Proces Raportowania i Analityki
-1. **Żądanie:** Użytkownik otwiera zakładkę raportów w aplikacji klienckiej (Frontend wywołuje `ReportService`).
-2. **Optymalizacja Agregacji:** Backend odbiera żądanie i zamiast pobierać setki tysięcy rekordów do pamięci RAM, wysyła zoptymalizowane zapytania do bazy danych (np. `COUNT(*) WHERE is_abnormal = true`).
-3. **Transfer:** Zliczone wartości są mapowane na zoptymalizowany obiekt DTO i przesyłane do klienta.
-4. **Wizualizacja:** Frontend (w oparciu o silnik graficzny JavaFX i mechanizm Auto-Grow) responsywnie renderuje odebrane wskaźniki na kartach KPI oraz dynamicznych wykresach (np. `PieChart`).
+### Proces Raportowania i Analityki Business Intelligence (OLAP)
+1. **Konfiguracja Żądania:** W interfejsie użytkownika zdefiniowane zostają parametry analizy: wymiar (oś X), funkcja agregująca (np. AVG, SUM na osi Y) oraz dynamiczne filtry i typ wizualizacji.
+2. **Translacja (Criteria API):** Backend obiera żądanie i w sposób bezpieczny (Whitelist) tłumaczy je na zapytanie bazodanowe. Silnik wykrywa, których tabel dotyczy zapytanie i automatycznie generuje odpowiednie klauzule złączeń (`JOIN`).
+3. **Obliczenia Bazodanowe:** Główne ciężary agregacji, sortowania i filtrowania wykonywane są bezpośrednio przez silnik MariaDB. Aplikacja Java nie ładuje setek tysięcy rekordów do pamięci RAM, chyba że użytkownik wykonuje żądanie podglądu surowych danych (funkcja Drill-down) – wówczas zapytanie jest optymalizowane limitem rekodrów.
+4. **Uniwersalny Transfer:** Zliczone wartości są transformowane na zunifikowany generyczny format (`ReportDataPoint` dla wykresów/tabeli, lub płaskie słowniki typu `Map<String, Object>` dla surowych wierszy).
+5. **Wizualizacja:** Frontend asynchronicznie odbiera dane. Tabela wyników generuje swoje kolumny automatycznie na podstawie kluczy ze słownika JSON, a obszar wykresów responsywnie renderuje wskazany przez użytkownika typ wizualizacji graficznej.
