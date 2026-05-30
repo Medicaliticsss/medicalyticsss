@@ -1,0 +1,898 @@
+[
+  {
+    "testCode": "WBC",
+    "testName": "Leukocyty",
+    "categoryName": "Morfologia",
+    "unit": "10^9/L",
+    "normMin": "4.0",
+    "normMax": "10.0"
+  },
+  {
+    "testCode": "RBC",
+    "testName": "Erytrocyty",
+    "categoryName": "Morfologia",
+    "unit": "10^12/L",
+    "normMin": "4.2",
+    "normMax": "5.4"
+  },
+  {
+    "testCode": "HGB",
+    "testName": "Hemoglobina",
+    "categoryName": "Morfologia",
+    "unit": "g/dL",
+    "normMin": "12.0",
+    "normMax": "16.0"
+  },
+  {
+    "testCode": "HCT",
+    "testName": "Hematokryt",
+    "categoryName": "Morfologia",
+    "unit": "%",
+    "normMin": "37.0",
+    "normMax": "47.0"
+  },
+  {
+    "testCode": "MCV",
+    "testName": "Średnia objętość krwinki (MCV)",
+    "categoryName": "Morfologia",
+    "unit": "fL",
+    "normMin": "80.0",
+    "normMax": "100.0"
+  },
+  {
+    "testCode": "MCH",
+    "testName": "Średnia masa Hb w krwince (MCH)",
+    "categoryName": "Morfologia",
+    "unit": "pg",
+    "normMin": "27.0",
+    "normMax": "32.0"
+  },
+  {
+    "testCode": "MCHC",
+    "testName": "Średnie stężenie Hb (MCHC)",
+    "categoryName": "Morfologia",
+    "unit": "g/dL",
+    "normMin": "32.0",
+    "normMax": "36.0"
+  },
+  {
+    "testCode": "PLT",
+    "testName": "Płytki krwi",
+    "categoryName": "Morfologia",
+    "unit": "10^9/L",
+    "normMin": "150.0",
+    "normMax": "400.0"
+  },
+  {
+    "testCode": "RDW",
+    "testName": "Rozkład objętości erytrocytów",
+    "categoryName": "Morfologia",
+    "unit": "%",
+    "normMin": "11.5",
+    "normMax": "14.5"
+  },
+  {
+    "testCode": "NEUT",
+    "testName": "Neutrofile",
+    "categoryName": "Morfologia",
+    "unit": "10^9/L",
+    "normMin": "2.0",
+    "normMax": "7.0"
+  },
+  {
+    "testCode": "LYMPH",
+    "testName": "Limfocyty",
+    "categoryName": "Morfologia",
+    "unit": "10^9/L",
+    "normMin": "1.0",
+    "normMax": "3.0"
+  },
+  {
+    "testCode": "MONO",
+    "testName": "Monocyty",
+    "categoryName": "Morfologia",
+    "unit": "10^9/L",
+    "normMin": "0.2",
+    "normMax": "1.0"
+  },
+  {
+    "testCode": "EO",
+    "testName": "Eozynofile",
+    "categoryName": "Morfologia",
+    "unit": "10^9/L",
+    "normMin": "0.0",
+    "normMax": "0.5"
+  },
+  {
+    "testCode": "BASO",
+    "testName": "Bazofile",
+    "categoryName": "Morfologia",
+    "unit": "10^9/L",
+    "normMin": "0.0",
+    "normMax": "0.1"
+  },
+  {
+    "testCode": "RET",
+    "testName": "Retikulocyty",
+    "categoryName": "Morfologia",
+    "unit": "%",
+    "normMin": "0.5",
+    "normMax": "1.5"
+  },
+  {
+    "testCode": "GLU",
+    "testName": "Glukoza",
+    "categoryName": "Biochemia",
+    "unit": "mg/dL",
+    "normMin": "70.0",
+    "normMax": "99.0"
+  },
+  {
+    "testCode": "UREA",
+    "testName": "Mocznik",
+    "categoryName": "Biochemia",
+    "unit": "mg/dL",
+    "normMin": "15.0",
+    "normMax": "45.0"
+  },
+  {
+    "testCode": "CREA",
+    "testName": "Kreatynina",
+    "categoryName": "Biochemia",
+    "unit": "mg/dL",
+    "normMin": "0.5",
+    "normMax": "1.2"
+  },
+  {
+    "testCode": "UA",
+    "testName": "Kwas moczowy",
+    "categoryName": "Biochemia",
+    "unit": "mg/dL",
+    "normMin": "3.5",
+    "normMax": "7.2"
+  },
+  {
+    "testCode": "TP",
+    "testName": "Białko całkowite",
+    "categoryName": "Biochemia",
+    "unit": "g/dL",
+    "normMin": "6.6",
+    "normMax": "8.7"
+  },
+  {
+    "testCode": "ALB",
+    "testName": "Albuminy",
+    "categoryName": "Biochemia",
+    "unit": "g/dL",
+    "normMin": "3.5",
+    "normMax": "5.2"
+  },
+  {
+    "testCode": "BIL-T",
+    "testName": "Bilirubina całkowita",
+    "categoryName": "Biochemia",
+    "unit": "mg/dL",
+    "normMin": "0.2",
+    "normMax": "1.2"
+  },
+  {
+    "testCode": "BIL-D",
+    "testName": "Bilirubina bezpośrednia",
+    "categoryName": "Biochemia",
+    "unit": "mg/dL",
+    "normMin": "0.0",
+    "normMax": "0.3"
+  },
+  {
+    "testCode": "CRP",
+    "testName": "Białko C-reaktywne (CRP)",
+    "categoryName": "Biochemia",
+    "unit": "mg/L",
+    "normMin": "0.0",
+    "normMax": "5.0"
+  },
+  {
+    "testCode": "HBA1C",
+    "testName": "Hemoglobina glikowana (HbA1c)",
+    "categoryName": "Biochemia",
+    "unit": "%",
+    "normMin": "4.0",
+    "normMax": "5.6"
+  },
+  {
+    "testCode": "HOMO",
+    "testName": "Homocysteina",
+    "categoryName": "Biochemia",
+    "unit": "umol/L",
+    "normMin": "5.0",
+    "normMax": "15.0"
+  },
+  {
+    "testCode": "LACT",
+    "testName": "Mleczany",
+    "categoryName": "Biochemia",
+    "unit": "mmol/L",
+    "normMin": "0.5",
+    "normMax": "2.2"
+  },
+  {
+    "testCode": "FRUC",
+    "testName": "Fruktozamina",
+    "categoryName": "Biochemia",
+    "unit": "umol/L",
+    "normMin": "200.0",
+    "normMax": "285.0"
+  },
+  {
+    "testCode": "AST",
+    "testName": "Aminotransferaza asparaginianowa (AST)",
+    "categoryName": "Enzymy",
+    "unit": "U/L",
+    "normMin": "5.0",
+    "normMax": "40.0"
+  },
+  {
+    "testCode": "ALT",
+    "testName": "Aminotransferaza alaninowa (ALT)",
+    "categoryName": "Enzymy",
+    "unit": "U/L",
+    "normMin": "5.0",
+    "normMax": "40.0"
+  },
+  {
+    "testCode": "ALP",
+    "testName": "Fosfataza alkaliczna (ALP)",
+    "categoryName": "Enzymy",
+    "unit": "U/L",
+    "normMin": "40.0",
+    "normMax": "120.0"
+  },
+  {
+    "testCode": "GGTP",
+    "testName": "Gamma-glutamylotranspeptydaza",
+    "categoryName": "Enzymy",
+    "unit": "U/L",
+    "normMin": "10.0",
+    "normMax": "40.0"
+  },
+  {
+    "testCode": "LDH",
+    "testName": "Dehydrogenaza mleczanowa",
+    "categoryName": "Enzymy",
+    "unit": "U/L",
+    "normMin": "140.0",
+    "normMax": "280.0"
+  },
+  {
+    "testCode": "CK",
+    "testName": "Kinaza kreatynowa (CK)",
+    "categoryName": "Enzymy",
+    "unit": "U/L",
+    "normMin": "30.0",
+    "normMax": "200.0"
+  },
+  {
+    "testCode": "CK-MB",
+    "testName": "Izoenzym MB kinazy kreatynowej",
+    "categoryName": "Enzymy",
+    "unit": "U/L",
+    "normMin": "0.0",
+    "normMax": "24.0"
+  },
+  {
+    "testCode": "AMYL",
+    "testName": "Amylaza",
+    "categoryName": "Enzymy",
+    "unit": "U/L",
+    "normMin": "28.0",
+    "normMax": "100.0"
+  },
+  {
+    "testCode": "LIP",
+    "testName": "Lipaza",
+    "categoryName": "Enzymy",
+    "unit": "U/L",
+    "normMin": "13.0",
+    "normMax": "60.0"
+  },
+  {
+    "testCode": "CHOL-E",
+    "testName": "Cholinoesteraza",
+    "categoryName": "Enzymy",
+    "unit": "U/L",
+    "normMin": "5300.0",
+    "normMax": "12900.0"
+  },
+  {
+    "testCode": "NA",
+    "testName": "Sód (Na)",
+    "categoryName": "Jonogram",
+    "unit": "mmol/L",
+    "normMin": "135.0",
+    "normMax": "145.0"
+  },
+  {
+    "testCode": "K",
+    "testName": "Potas (K)",
+    "categoryName": "Jonogram",
+    "unit": "mmol/L",
+    "normMin": "3.5",
+    "normMax": "5.1"
+  },
+  {
+    "testCode": "CL",
+    "testName": "Chlorki (Cl)",
+    "categoryName": "Jonogram",
+    "unit": "mmol/L",
+    "normMin": "98.0",
+    "normMax": "107.0"
+  },
+  {
+    "testCode": "CA",
+    "testName": "Wapń całkowity (Ca)",
+    "categoryName": "Jonogram",
+    "unit": "mg/dL",
+    "normMin": "8.5",
+    "normMax": "10.5"
+  },
+  {
+    "testCode": "CA-ION",
+    "testName": "Wapń zjonizowany",
+    "categoryName": "Jonogram",
+    "unit": "mmol/L",
+    "normMin": "1.1",
+    "normMax": "1.3"
+  },
+  {
+    "testCode": "MG",
+    "testName": "Magnez (Mg)",
+    "categoryName": "Jonogram",
+    "unit": "mg/dL",
+    "normMin": "1.6",
+    "normMax": "2.6"
+  },
+  {
+    "testCode": "P",
+    "testName": "Fosfor nieorganiczny (P)",
+    "categoryName": "Jonogram",
+    "unit": "mg/dL",
+    "normMin": "2.5",
+    "normMax": "4.5"
+  },
+  {
+    "testCode": "FE",
+    "testName": "Żelazo (Fe)",
+    "categoryName": "Jonogram",
+    "unit": "ug/dL",
+    "normMin": "60.0",
+    "normMax": "170.0"
+  },
+  {
+    "testCode": "CU",
+    "testName": "Miedź (Cu)",
+    "categoryName": "Jonogram",
+    "unit": "ug/dL",
+    "normMin": "70.0",
+    "normMax": "140.0"
+  },
+  {
+    "testCode": "ZN",
+    "testName": "Cynk (Zn)",
+    "categoryName": "Jonogram",
+    "unit": "ug/dL",
+    "normMin": "70.0",
+    "normMax": "120.0"
+  },
+  {
+    "testCode": "CHOL",
+    "testName": "Cholesterol całkowity",
+    "categoryName": "Lipidogram",
+    "unit": "mg/dL",
+    "normMin": "115.0",
+    "normMax": "190.0"
+  },
+  {
+    "testCode": "HDL",
+    "testName": "Cholesterol HDL",
+    "categoryName": "Lipidogram",
+    "unit": "mg/dL",
+    "normMin": "40.0",
+    "normMax": "100.0"
+  },
+  {
+    "testCode": "LDL",
+    "testName": "Cholesterol LDL",
+    "categoryName": "Lipidogram",
+    "unit": "mg/dL",
+    "normMin": "0.0",
+    "normMax": "115.0"
+  },
+  {
+    "testCode": "TG",
+    "testName": "Triglicerydy",
+    "categoryName": "Lipidogram",
+    "unit": "mg/dL",
+    "normMin": "0.0",
+    "normMax": "150.0"
+  },
+  {
+    "testCode": "NON-HDL",
+    "testName": "Cholesterol nie-HDL",
+    "categoryName": "Lipidogram",
+    "unit": "mg/dL",
+    "normMin": "0.0",
+    "normMax": "130.0"
+  },
+  {
+    "testCode": "TSH",
+    "testName": "Hormon tyreotropowy (TSH)",
+    "categoryName": "Hormony",
+    "unit": "uIU/mL",
+    "normMin": "0.27",
+    "normMax": "4.20"
+  },
+  {
+    "testCode": "FT3",
+    "testName": "Wolna trijodotyronina (FT3)",
+    "categoryName": "Hormony",
+    "unit": "pg/mL",
+    "normMin": "2.0",
+    "normMax": "4.4"
+  },
+  {
+    "testCode": "FT4",
+    "testName": "Wolna tyroksyna (FT4)",
+    "categoryName": "Hormony",
+    "unit": "ng/dL",
+    "normMin": "0.93",
+    "normMax": "1.70"
+  },
+  {
+    "testCode": "ANTI-TPO",
+    "testName": "Przeciwciała anty-TPO",
+    "categoryName": "Immunologia",
+    "unit": "IU/mL",
+    "normMin": "0.0",
+    "normMax": "34.0"
+  },
+  {
+    "testCode": "ANTI-TG",
+    "testName": "Przeciwciała anty-TG",
+    "categoryName": "Immunologia",
+    "unit": "IU/mL",
+    "normMin": "0.0",
+    "normMax": "115.0"
+  },
+  {
+    "testCode": "FSH",
+    "testName": "Hormon folikulotropowy (FSH)",
+    "categoryName": "Hormony",
+    "unit": "mIU/mL",
+    "normMin": "1.5",
+    "normMax": "12.4"
+  },
+  {
+    "testCode": "LH",
+    "testName": "Hormon luteinizujący (LH)",
+    "categoryName": "Hormony",
+    "unit": "mIU/mL",
+    "normMin": "1.7",
+    "normMax": "8.6"
+  },
+  {
+    "testCode": "E2",
+    "testName": "Estradiol",
+    "categoryName": "Hormony",
+    "unit": "pg/mL",
+    "normMin": "12.0",
+    "normMax": "166.0"
+  },
+  {
+    "testCode": "PROG",
+    "testName": "Progesteron",
+    "categoryName": "Hormony",
+    "unit": "ng/mL",
+    "normMin": "0.2",
+    "normMax": "1.5"
+  },
+  {
+    "testCode": "PRL",
+    "testName": "Prolaktyna",
+    "categoryName": "Hormony",
+    "unit": "ng/mL",
+    "normMin": "4.7",
+    "normMax": "23.3"
+  },
+  {
+    "testCode": "TESTO",
+    "testName": "Testosteron całkowity",
+    "categoryName": "Hormony",
+    "unit": "ng/dL",
+    "normMin": "250.0",
+    "normMax": "800.0"
+  },
+  {
+    "testCode": "TESTO-F",
+    "testName": "Testosteron wolny",
+    "categoryName": "Hormony",
+    "unit": "pg/mL",
+    "normMin": "1.0",
+    "normMax": "28.0"
+  },
+  {
+    "testCode": "SHBG",
+    "testName": "Białko wiążące hormony płciowe",
+    "categoryName": "Hormony",
+    "unit": "nmol/L",
+    "normMin": "18.0",
+    "normMax": "114.0"
+  },
+  {
+    "testCode": "DHEA-S",
+    "testName": "Siarczan DHEA",
+    "categoryName": "Hormony",
+    "unit": "ug/dL",
+    "normMin": "35.0",
+    "normMax": "430.0"
+  },
+  {
+    "testCode": "BHCG",
+    "testName": "Beta-hCG",
+    "categoryName": "Hormony",
+    "unit": "mIU/mL",
+    "normMin": "0.0",
+    "normMax": "5.0"
+  },
+  {
+    "testCode": "CORT",
+    "testName": "Kortyzol (rano)",
+    "categoryName": "Hormony",
+    "unit": "ug/dL",
+    "normMin": "6.2",
+    "normMax": "19.4"
+  },
+  {
+    "testCode": "INS",
+    "testName": "Insulina (na czczo)",
+    "categoryName": "Hormony",
+    "unit": "uIU/mL",
+    "normMin": "2.6",
+    "normMax": "24.9"
+  },
+  {
+    "testCode": "PTH",
+    "testName": "Parathormon (PTH)",
+    "categoryName": "Hormony",
+    "unit": "pg/mL",
+    "normMin": "15.0",
+    "normMax": "65.0"
+  },
+  {
+    "testCode": "ACTH",
+    "testName": "Hormon adrenokortykotropowy",
+    "categoryName": "Hormony",
+    "unit": "pg/mL",
+    "normMin": "7.2",
+    "normMax": "63.3"
+  },
+  {
+    "testCode": "ALD",
+    "testName": "Aldosteron",
+    "categoryName": "Hormony",
+    "unit": "ng/dL",
+    "normMin": "3.0",
+    "normMax": "16.0"
+  },
+  {
+    "testCode": "FERR",
+    "testName": "Ferrytyna",
+    "categoryName": "Witaminy",
+    "unit": "ng/mL",
+    "normMin": "15.0",
+    "normMax": "300.0"
+  },
+  {
+    "testCode": "TIBC",
+    "testName": "Całkowita zdolność wiązania Fe",
+    "categoryName": "Witaminy",
+    "unit": "ug/dL",
+    "normMin": "250.0",
+    "normMax": "400.0"
+  },
+  {
+    "testCode": "TRANS",
+    "testName": "Transferryna",
+    "categoryName": "Witaminy",
+    "unit": "mg/dL",
+    "normMin": "200.0",
+    "normMax": "360.0"
+  },
+  {
+    "testCode": "VIT-D3",
+    "testName": "Witamina D3 (25-OH)",
+    "categoryName": "Witaminy",
+    "unit": "ng/mL",
+    "normMin": "30.0",
+    "normMax": "50.0"
+  },
+  {
+    "testCode": "VIT-B12",
+    "testName": "Witamina B12",
+    "categoryName": "Witaminy",
+    "unit": "pg/mL",
+    "normMin": "197.0",
+    "normMax": "771.0"
+  },
+  {
+    "testCode": "FOLIC",
+    "testName": "Kwas foliowy",
+    "categoryName": "Witaminy",
+    "unit": "ng/mL",
+    "normMin": "4.6",
+    "normMax": "18.7"
+  },
+  {
+    "testCode": "PT",
+    "testName": "Czas protrombinowy (PT)",
+    "categoryName": "Koagulologia",
+    "unit": "sek",
+    "normMin": "10.0",
+    "normMax": "14.0"
+  },
+  {
+    "testCode": "INR",
+    "testName": "Wskaźnik INR",
+    "categoryName": "Koagulologia",
+    "unit": "-",
+    "normMin": "0.8",
+    "normMax": "1.2"
+  },
+  {
+    "testCode": "APTT",
+    "testName": "Czas kaolinowo-kefalinowy",
+    "categoryName": "Koagulologia",
+    "unit": "sek",
+    "normMin": "26.0",
+    "normMax": "40.0"
+  },
+  {
+    "testCode": "FIBR",
+    "testName": "Fibrynogen",
+    "categoryName": "Koagulologia",
+    "unit": "g/L",
+    "normMin": "1.8",
+    "normMax": "3.5"
+  },
+  {
+    "testCode": "D-DIM",
+    "testName": "D-dimery",
+    "categoryName": "Koagulologia",
+    "unit": "ug/mL",
+    "normMin": "0.0",
+    "normMax": "0.5"
+  },
+  {
+    "testCode": "PSA",
+    "testName": "PSA całkowity",
+    "categoryName": "Markery",
+    "unit": "ng/mL",
+    "normMin": "0.0",
+    "normMax": "4.0"
+  },
+  {
+    "testCode": "FPSA",
+    "testName": "PSA wolny",
+    "categoryName": "Markery",
+    "unit": "ng/mL",
+    "normMin": "0.0",
+    "normMax": "1.0"
+  },
+  {
+    "testCode": "CEA",
+    "testName": "Antygen karcinoembrionalny (CEA)",
+    "categoryName": "Markery",
+    "unit": "ng/mL",
+    "normMin": "0.0",
+    "normMax": "5.0"
+  },
+  {
+    "testCode": "CA125",
+    "testName": "Antygen nowotworowy 125",
+    "categoryName": "Markery",
+    "unit": "U/mL",
+    "normMin": "0.0",
+    "normMax": "35.0"
+  },
+  {
+    "testCode": "CA153",
+    "testName": "Antygen nowotworowy 15-3",
+    "categoryName": "Markery",
+    "unit": "U/mL",
+    "normMin": "0.0",
+    "normMax": "25.0"
+  },
+  {
+    "testCode": "CA199",
+    "testName": "Antygen nowotworowy 19-9",
+    "categoryName": "Markery",
+    "unit": "U/mL",
+    "normMin": "0.0",
+    "normMax": "37.0"
+  },
+  {
+    "testCode": "AFP",
+    "testName": "Alfa-fetoproteina (AFP)",
+    "categoryName": "Markery",
+    "unit": "IU/mL",
+    "normMin": "0.0",
+    "normMax": "5.8"
+  },
+  {
+    "testCode": "HE4",
+    "testName": "Białko HE4",
+    "categoryName": "Markery",
+    "unit": "pmol/L",
+    "normMin": "0.0",
+    "normMax": "70.0"
+  },
+  {
+    "testCode": "CYFRA",
+    "testName": "Cyfra 21-1",
+    "categoryName": "Markery",
+    "unit": "ng/mL",
+    "normMin": "0.0",
+    "normMax": "3.3"
+  },
+  {
+    "testCode": "SCC",
+    "testName": "Antygen SCC",
+    "categoryName": "Markery",
+    "unit": "ng/mL",
+    "normMin": "0.0",
+    "normMax": "1.5"
+  },
+  {
+    "testCode": "IGG",
+    "testName": "Immunoglobuliny IgG",
+    "categoryName": "Immunologia",
+    "unit": "g/L",
+    "normMin": "7.0",
+    "normMax": "16.0"
+  },
+  {
+    "testCode": "IGA",
+    "testName": "Immunoglobuliny IgA",
+    "categoryName": "Immunologia",
+    "unit": "g/L",
+    "normMin": "0.7",
+    "normMax": "4.0"
+  },
+  {
+    "testCode": "IGM",
+    "testName": "Immunoglobuliny IgM",
+    "categoryName": "Immunologia",
+    "unit": "g/L",
+    "normMin": "0.4",
+    "normMax": "2.3"
+  },
+  {
+    "testCode": "IGE",
+    "testName": "Immunoglobuliny IgE całkowite",
+    "categoryName": "Immunologia",
+    "unit": "IU/mL",
+    "normMin": "0.0",
+    "normMax": "100.0"
+  },
+  {
+    "testCode": "RF",
+    "testName": "Czynnik reumatoidalny (RF)",
+    "categoryName": "Immunologia",
+    "unit": "IU/mL",
+    "normMin": "0.0",
+    "normMax": "14.0"
+  },
+  {
+    "testCode": "ASO",
+    "testName": "Odczyn antystreptolizynowy (ASO)",
+    "categoryName": "Immunologia",
+    "unit": "IU/mL",
+    "normMin": "0.0",
+    "normMax": "200.0"
+  },
+  {
+    "testCode": "U-PH",
+    "testName": "pH moczu",
+    "categoryName": "Mocz",
+    "unit": "-",
+    "normMin": "5.0",
+    "normMax": "8.0"
+  },
+  {
+    "testCode": "U-SG",
+    "testName": "Ciężar właściwy moczu",
+    "categoryName": "Mocz",
+    "unit": "g/cm3",
+    "normMin": "1.015",
+    "normMax": "1.025"
+  },
+  {
+    "testCode": "U-PRO",
+    "testName": "Białko w moczu",
+    "categoryName": "Mocz",
+    "unit": "mg/dL",
+    "normMin": "0.0",
+    "normMax": "15.0"
+  },
+  {
+    "testCode": "U-GLU",
+    "testName": "Glukoza w moczu",
+    "categoryName": "Mocz",
+    "unit": "mg/dL",
+    "normMin": "0.0",
+    "normMax": "15.0"
+  },
+  {
+    "testCode": "U-KET",
+    "testName": "Ciała ketonowe w moczu",
+    "categoryName": "Mocz",
+    "unit": "mg/dL",
+    "normMin": "0.0",
+    "normMax": "5.0"
+  },
+  {
+    "testCode": "U-URO",
+    "testName": "Urobilinogen",
+    "categoryName": "Mocz",
+    "unit": "mg/dL",
+    "normMin": "0.1",
+    "normMax": "1.0"
+  },
+  {
+    "testCode": "U-BIL",
+    "testName": "Bilirubina w moczu",
+    "categoryName": "Mocz",
+    "unit": "mg/dL",
+    "normMin": "0.0",
+    "normMax": "0.2"
+  },
+  {
+    "testCode": "PH",
+    "testName": "pH krwi",
+    "categoryName": "Gazometria",
+    "unit": "-",
+    "normMin": "7.35",
+    "normMax": "7.45"
+  },
+  {
+    "testCode": "PCO2",
+    "testName": "Ciśnienie parcjalne CO2",
+    "categoryName": "Gazometria",
+    "unit": "mmHg",
+    "normMin": "35.0",
+    "normMax": "45.0"
+  },
+  {
+    "testCode": "PO2",
+    "testName": "Ciśnienie parcjalne O2",
+    "categoryName": "Gazometria",
+    "unit": "mmHg",
+    "normMin": "75.0",
+    "normMax": "100.0"
+  },
+  {
+    "testCode": "HCO3",
+    "testName": "Wodorowęglany",
+    "categoryName": "Gazometria",
+    "unit": "mmol/L",
+    "normMin": "22.0",
+    "normMax": "26.0"
+  },
+  {
+    "testCode": "BE",
+    "testName": "Nadmiar zasad (Base Excess)",
+    "categoryName": "Gazometria",
+    "unit": "mmol/L",
+    "normMin": "-2.0",
+    "normMax": "2.0"
+  }
+]

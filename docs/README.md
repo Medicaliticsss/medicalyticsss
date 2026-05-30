@@ -25,7 +25,15 @@ Zarządzanie strukturą bazy danych w projekcie przejął **Flyway**. Zanim uruc
 1. W IntelliJ przejdź do folderu `backend/src/main/java/com/medicalyticsss/backend`.
 2. Otwórz klasę `Application` (główną klasę Spring Boot).
 3. Uruchom metodę `main` (zielony trójkąt "Run").
-4. W konsoli powinieneś zobaczyć komunikat o wymuszeniu uruchomienia Flywaya (skrypty same zbudują tabele w pustej bazie). Dodatkowo uruchomi się **DictionarySeeder**, który automatycznie załaduje twardy słownik 100 badań do bazy. Tomcat rozpocznie nasłuchiwanie na porcie `8080`. **NIE ZAMYKAJ TEJ KONSOLI.**
+4. W konsoli powinieneś zobaczyć komunikat o wymuszeniu uruchomienia Flywaya (skrypty same zbudują tabele w pustej bazie). Dodatkowo uruchomi się **DictionarySeeder**, który automatycznie załaduje słownik badań z pliku JSON do bazy. Tomcat rozpocznie nasłuchiwanie na porcie `8080`. **NIE ZAMYKAJ TEJ KONSOLI.**
+
+Domyślny słownik znajduje się w `backend/src/main/resources/dictionaries/test-types.json`. Możesz wskazać własny plik bez przebudowy aplikacji, ustawiając właściwość `dictionary.tests.path`, np.:
+
+```bash
+java -jar backend.jar --dictionary.tests.path=file:/sciezka/do/custom-test-types.json
+```
+
+Plik powinien być tablicą obiektów JSON z polami: `testCode`, `testName`, `categoryName`, `unit`, `normMin`, `normMax`.
 
 ### Krok 3: Uruchomienie Aplikacji Okienkowej (Frontend)
 1. Otwórz PRAWY panel **Maven** w IntelliJ.
@@ -92,7 +100,7 @@ Moduł obsługujący procesy hurtowni danych (Extract, Transform, Load) oraz bez
   * **Ścisła walidacja (Strict Validation):** System weryfikuje kompletność każdego wiersza. Brak chociażby jednego pola skutkuje odrzuceniem konkretnego rekordu i logowaniem go do tabeli błędów.
   * Zabezpiecza wrażliwe dane: zamienia PESEL na skrót SHA-256.
   * **Normalizacja MDM:** Nazwy placówek, miast i województw przed zapisem są formatowane (Title Case, usuwanie znaków specjalnych i podwójnych spacji), aby zapobiec duplikatom w wymiarze `dim_facility`.
-  * **Twardy Słownik (MDM):** Wymiar `dim_test_type` jest nienaruszalny. Pliki CSV dostarczają tylko wyniki pacjenta – do ewaluacji anomalii używane są wyłącznie twarde normy załadowane do bazy przez Seeder.
+  * **Słownik MDM:** Wymiar `dim_test_type` jest nienaruszalny. Pliki CSV dostarczają tylko wyniki pacjenta – do ewaluacji anomalii używane są wyłącznie normy załadowane do bazy przez Seeder z pliku JSON.
   * Sukcesy dopisuje do tabeli `fact_test_results`, a anomalie odrzuca do tabeli `processing_errors`.
   * Aktualizuje finalny status pliku (`SUCCESS`, `PARTIAL_SUCCESS` lub `ERROR`).
 * **Odpowiedź:** `200 OK` (`"Proces przetwarzania zakończony. Sprawdź status pliku."`)
