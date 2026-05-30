@@ -21,7 +21,7 @@ Projekt opiera się na klasycznej architekturze **Klient-Serwer**, rozdzielając
 * **Moduł ETL & MDM:** * **Strict Validation:** Klasa `CsvProcessingService` rygorystycznie waliduje kompletność danych wiersz po wierszu.
   * **String Sanitization:** Czyści i standaryzuje (Title Case) dane tekstowe "w locie", aby zapobiegać duplikatom.
   * Zapewnia anonimizację danych wrażliwych pacjentów (PESEL -> SHA-256).
-* **Dictionary Seeder:** Komponent ładujący twardy słownik referencyjny medycznych norm i badań podczas startu serwera, uodparniając bazę na błędne dane z zewnątrz.
+* **Dictionary Seeder:** Komponent ładujący referencyjny słownik medycznych norm i badań z konfigurowalnego pliku JSON podczas startu serwera, uodparniając bazę na błędne dane z zewnątrz.
 * **Silnik Raportowy BI (OLAP):** Zastąpił sztywne zapytania w pełni dynamicznym silnikiem opartym na **JPA Criteria API**. Wykorzystuje wzorzec **Whitelist** (Enumy), gwarantując całkowitą ochronę przed atakami SQL Injection. Samodzielnie rozwiązuje złączenia tabel (LEFT JOIN) oraz przetwarza rzutowanie typów dla zaawansowanych filtrów (klauzula WHERE).
 
 ### 3. Baza Danych (Model Gwiazdy + Moduł User)
@@ -30,7 +30,7 @@ Projekt opiera się na klasycznej architekturze **Klient-Serwer**, rozdzielając
   * **Użytkownicy:** Tabela `users` (id, username, password_hash).
   * **Tabele Faktów:** `fact_test_results` (centralny punkt modelu gwiazdy; wyniki badań powiązane z wymiarami i plikiem źródłowym).
   * **Tabele Wymiarów (Współdzielone):** * `dim_patient`, `dim_facility` – aktualizowane dynamicznie i transakcyjnie metodą *Upsert* (po uprzedniej normalizacji tekstów).
-    * `dim_test_type` – **Twardy Słownik (MDM)**, zasilany wyłącznie przez system, służący jako ostateczne źródło prawdy dla norm badawczych.
+    * `dim_test_type` – **Słownik MDM**, zasilany przez system z pliku wskazanego we właściwości `dictionary.tests.path`, służący jako ostateczne źródło prawdy dla norm badawczych.
   * **Historia:** `files_history` – kluczowa relacja z `users` (kolumna `user_id`). Przechowuje finalną nazwę pliku, datę wgrania (`uploadTime`) oraz status cyklu życia.
   * **Błędy:** `processing_errors` – szczegółowe logi anomalii w plikach chroniące przed przerwaniem globalnego procesu ETL.
 
@@ -47,7 +47,7 @@ Projekt opiera się na klasycznej architekturze **Klient-Serwer**, rozdzielając
 3. **Transformacja (ETL & Walidacja):** * Wiersze poddawane są "Żelaznej Bramce" (odrzucanie rekordów z brakującymi kolumnami).
 * Wrażliwe dane ulegają anonimizacji.
 * Teksty podlegają obróbce i czyszczeniu (String Sanitization).
-4. **Analiza i Weryfikacja (MDM):** System weryfikuje wymiary. Przy wyliczaniu flagi anomalii (`is_abnormal`), parser całkowicie ignoruje normy zawarte w pliku CSV, opierając analizę wyłącznie na *Twardym Słowniku* załadowanym do bazy przez system.
+4. **Analiza i Weryfikacja (MDM):** System weryfikuje wymiary. Przy wyliczaniu flagi anomalii (`is_abnormal`), parser całkowicie ignoruje normy zawarte w pliku CSV, opierając analizę wyłącznie na słowniku MDM załadowanym do bazy przez system z pliku JSON.
 5. **Finalizacja:** Prawidłowe wiersze zasilają model gwiazdy, a błędne lądują w tabeli anomalii. Status pliku ulega zmianie na `SUCCESS` lub `PARTIAL_SUCCESS`.
 6. **Wycofanie Zmian (Rollback / Soft Delete):** Po usunięciu pliku przez użytkownika, system transakcyjnie kasuje wyniki i błędy (`@Modifying`) chroniąc spójność raportów. Wymiary i słowniki celowo nie są usuwane. Rekord pliku otrzymuje status `DELETED`.
 
