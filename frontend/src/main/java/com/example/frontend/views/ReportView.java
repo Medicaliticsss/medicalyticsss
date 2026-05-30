@@ -97,7 +97,7 @@ public class ReportView {
 
         // ZAKŁADKA 3: Surowe Dane (Dynamiczny SELECT *)
         rawDataTable = new TableView<>();
-        rawDataTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        rawDataTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
         exportRawCsvButton = createExportButton(
                 "Eksportuj surowe dane CSV",
                 () -> exportTable(rawDataTable, "raport-surowe-dane.csv", "Surowe dane zostały zapisane do pliku CSV.")
@@ -455,7 +455,8 @@ public class ReportView {
                 return new SimpleObjectProperty<>(value != null ? value : "Brak danych");
             });
 
-            column.setPrefWidth(130);
+            column.setMinWidth(130);
+            column.setPrefWidth(160);
             table.getColumns().add(column);
         }
 
