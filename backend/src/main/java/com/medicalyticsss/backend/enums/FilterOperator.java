@@ -5,5 +5,7 @@ public enum FilterOperator {
     NOT_EQUALS,     // Różne (!=)
     GREATER_THAN,   // Większe niż (>)
     LESS_THAN,      // Mniejsze niż (<)
-    CONTAINS        // LIKE %...%
+    CONTAINS,       // LIKE %...%
+    IN,             // Wartość znajduje się na liście rozdzielonej przecinkami
+    BETWEEN         // Wartość znajduje się między dwiema wartościami rozdzielonymi przecinkiem
 }
