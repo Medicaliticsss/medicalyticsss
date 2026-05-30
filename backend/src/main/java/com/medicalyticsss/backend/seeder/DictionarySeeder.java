@@ -21,15 +21,14 @@ import java.util.Set;
 public class DictionarySeeder implements CommandLineRunner {
 
     private final TestTypeRepository testTypeRepository;
-    private final ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper = new ObjectMapper();
     private final ResourceLoader resourceLoader;
 
     @Value("${dictionary.tests.path:classpath:dictionaries/test-types.json}")
     private String dictionaryPath;
 
-    public DictionarySeeder(TestTypeRepository testTypeRepository, ObjectMapper objectMapper, ResourceLoader resourceLoader) {
+    public DictionarySeeder(TestTypeRepository testTypeRepository, ResourceLoader resourceLoader) {
         this.testTypeRepository = testTypeRepository;
-        this.objectMapper = objectMapper;
         this.resourceLoader = resourceLoader;
     }
 
