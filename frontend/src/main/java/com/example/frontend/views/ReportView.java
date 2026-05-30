@@ -145,11 +145,6 @@ public class ReportView {
         runBtn.setMaxWidth(Double.MAX_VALUE);
         runBtn.setOnAction(e -> runReport());
 
-        Button lipidogramPresetBtn = new Button("Preset: Lipidogram mężczyzn wg roku");
-        lipidogramPresetBtn.getStyleClass().add(Styles.BUTTON_OUTLINED);
-        lipidogramPresetBtn.setMaxWidth(Double.MAX_VALUE);
-        lipidogramPresetBtn.setOnAction(e -> runLipidogramPreset());
-
         sidebar.getChildren().addAll(
                 configTitle,
                 new Label("Wymiary grupowania:"), groupByList,
@@ -159,8 +154,7 @@ public class ReportView {
                 new Separator(),
                 filterTitle, filtersContainer, addFilterBtn,
                 new Separator(),
-                runBtn,
-                lipidogramPresetBtn
+                runBtn
         );
 
         return sidebar;
