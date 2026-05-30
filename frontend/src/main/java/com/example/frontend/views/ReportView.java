@@ -4,11 +4,12 @@ import atlantafx.base.theme.Styles;
 import com.example.frontend.models.CustomReportRequest;
 import com.example.frontend.models.ReportDataPoint;
 import com.example.frontend.models.ReportFilter;
+import com.example.frontend.models.SeriesReportDataPoint;
+import com.example.frontend.models.SeriesReportRequest;
 import com.example.frontend.services.ReportService;
 import com.example.frontend.utils.ViewManager;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
-import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Parent;
@@ -17,18 +18,19 @@ import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ReportView {
 
     // Główne elementy interfejsu
-    private static TableView<ReportDataPoint> resultsTable;
+    private static TableView<Map<String, Object>> resultsTable;
     private static TableView<Map<String, Object>> rawDataTable; // Tabela dynamiczna (Słowniki)
     private static StackPane chartArea;
 
     // Elementy paska bocznego
-    private static ComboBox<String> groupByCombo;
+    private static ListView<String> groupByList;
     private static ComboBox<String> operationCombo;
     private static ComboBox<String> targetColCombo;
     private static ComboBox<String> chartTypeCombo;
@@ -63,18 +65,10 @@ public class ReportView {
         TabPane resultsTabs = new TabPane();
         resultsTabs.getStyleClass().add(TabPane.STYLE_CLASS_FLOATING);
 
-        // ZAKŁADKA 1: Data Grid (Agregacje)
+        // ZAKŁADKA 1: Data Grid (Agregacje lub wybór bez agregacji)
         resultsTable = new TableView<>();
         resultsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-        TableColumn<ReportDataPoint, String> labelCol = new TableColumn<>("Wymiar (Kategoria)");
-        labelCol.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().label()));
-
-        TableColumn<ReportDataPoint, Number> valueCol = new TableColumn<>("Wynik (Wartość)");
-        valueCol.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().value()));
-
-        resultsTable.getColumns().addAll(labelCol, valueCol);
-        Tab tableTab = new Tab("Agregacja (Tabela)", resultsTable);
+        Tab tableTab = new Tab("Raport (Tabela)", resultsTable);
         tableTab.setClosable(false);
 
         // ZAKŁADKA 2: Wizualizacja (Wykresy)
@@ -107,13 +101,15 @@ public class ReportView {
         Label configTitle = new Label("Konfiguracja");
         configTitle.getStyleClass().add(Styles.TITLE_4);
 
-        groupByCombo = new ComboBox<>();
-        groupByCombo.getItems().addAll("FACILITY_CITY", "FACILITY_NAME", "PATIENT_GENDER", "TEST_CATEGORY", "TEST_NAME", "PATIENT_BIRTH_YEAR");
-        groupByCombo.setValue("PATIENT_GENDER");
-        groupByCombo.setMaxWidth(Double.MAX_VALUE);
+        groupByList = new ListView<>();
+        groupByList.getItems().addAll("FACILITY_CITY", "FACILITY_NAME", "PATIENT_GENDER", "TEST_CATEGORY", "TEST_CODE", "TEST_NAME", "PATIENT_BIRTH_YEAR");
+        groupByList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        groupByList.getSelectionModel().select("PATIENT_GENDER");
+        groupByList.setPrefHeight(145);
+        groupByList.setMaxWidth(Double.MAX_VALUE);
 
         operationCombo = new ComboBox<>();
-        operationCombo.getItems().addAll("COUNT", "SUM", "AVG");
+        operationCombo.getItems().addAll("NONE", "COUNT", "SUM", "AVG");
         operationCombo.setValue("COUNT");
         operationCombo.setMaxWidth(Double.MAX_VALUE);
 
@@ -121,6 +117,13 @@ public class ReportView {
         targetColCombo.getItems().addAll("RESULT_VALUE", "IS_ABNORMAL", "TEST_CODE");
         targetColCombo.setValue("TEST_CODE");
         targetColCombo.setMaxWidth(Double.MAX_VALUE);
+        operationCombo.valueProperty().addListener((obs, oldValue, newValue) -> {
+            targetColCombo.setDisable("NONE".equals(newValue));
+            if (("SUM".equals(newValue) || "AVG".equals(newValue))
+                    && !"RESULT_VALUE".equals(targetColCombo.getValue())) {
+                targetColCombo.setValue("RESULT_VALUE");
+            }
+        });
 
         Label chartTypeTitle = new Label("Wizualizacja");
         chartTypeTitle.getStyleClass().add(Styles.TEXT_MUTED);
@@ -142,16 +145,22 @@ public class ReportView {
         runBtn.setMaxWidth(Double.MAX_VALUE);
         runBtn.setOnAction(e -> runReport());
 
+        Button lipidogramPresetBtn = new Button("Preset: Lipidogram mężczyzn wg roku");
+        lipidogramPresetBtn.getStyleClass().add(Styles.BUTTON_OUTLINED);
+        lipidogramPresetBtn.setMaxWidth(Double.MAX_VALUE);
+        lipidogramPresetBtn.setOnAction(e -> runLipidogramPreset());
+
         sidebar.getChildren().addAll(
                 configTitle,
-                new Label("Wymiar (Oś X):"), groupByCombo,
-                new Label("Agregacja (Oś Y):"), operationCombo, targetColCombo,
+                new Label("Wymiary grupowania:"), groupByList,
+                new Label("Agregacja (opcjonalna):"), operationCombo, targetColCombo,
                 new Separator(),
                 chartTypeTitle, chartTypeCombo,
                 new Separator(),
                 filterTitle, filtersContainer, addFilterBtn,
                 new Separator(),
-                runBtn
+                runBtn,
+                lipidogramPresetBtn
         );
 
         return sidebar;
@@ -171,31 +180,77 @@ public class ReportView {
             if (f != null) filters.add(f);
         }
 
+        List<String> selectedGroups = new ArrayList<>(groupByList.getSelectionModel().getSelectedItems());
+        String operation = operationCombo.getValue();
+        boolean aggregateSelected = operation != null && !operation.equals("NONE");
+
         CustomReportRequest request = new CustomReportRequest(
-                List.of(groupByCombo.getValue()),
-                targetColCombo.getValue(),
-                operationCombo.getValue(),
-                targetColCombo.getValue(),
+                selectedGroups,
+                aggregateSelected ? targetColCombo.getValue() : null,
+                aggregateSelected ? operation : null,
+                null,
                 "DESC",
                 filters
         );
 
-        // STRZAŁ PO DANE DO WYKRESÓW I AGREGACJI
-        ReportService.fetchCustomReport(request).thenAccept(data -> {
-            Platform.runLater(() -> updateChartAndTable(data));
+        // STRZAŁ PO ELASTYCZNĄ TABELĘ RAPORTOWĄ
+        ReportService.fetchCustomReportRows(request).thenAccept(data -> {
+            Platform.runLater(() -> buildDynamicTable(resultsTable, data, "Brak danych dla konfiguracji raportu."));
         });
+
+        // STRZAŁ PO DANE DO WYKRESÓW, tylko gdy użytkownik wybrał agregację
+        if (aggregateSelected) {
+            ReportService.fetchCustomReport(request).thenAccept(data -> {
+                Platform.runLater(() -> updateChart(data));
+            });
+        } else {
+            chartArea.getChildren().setAll(new Label("Wybierz agregację, aby wygenerować wykres."));
+        }
 
         // STRZAŁ PO SUROWE DANE
         ReportService.fetchRawData(request).thenAccept(rawData -> {
-            Platform.runLater(() -> buildDynamicRawTable(rawData));
+            Platform.runLater(() -> buildDynamicTable(rawDataTable, rawData, "Brak surowych danych dla tych kryteriów."));
         });
     }
 
-    private static void updateChartAndTable(List<ReportDataPoint> data) {
-        // Tabela Agregacji
-        resultsTable.getItems().clear();
-        resultsTable.getItems().addAll(data);
+    private static void runLipidogramPreset() {
+        List<ReportFilter> filters = List.of(
+                new ReportFilter("PATIENT_GENDER", "EQUALS", "M"),
+                new ReportFilter("TEST_CATEGORY", "EQUALS", "Lipidogram")
+        );
 
+        CustomReportRequest tableRequest = new CustomReportRequest(
+                List.of("PATIENT_BIRTH_YEAR", "TEST_CODE"),
+                "RESULT_VALUE",
+                "AVG",
+                "PATIENT_BIRTH_YEAR",
+                "ASC",
+                filters
+        );
+
+        SeriesReportRequest chartRequest = new SeriesReportRequest(
+                "PATIENT_BIRTH_YEAR",
+                "TEST_CODE",
+                "RESULT_VALUE",
+                "AVG",
+                "ASC",
+                filters
+        );
+
+        ReportService.fetchCustomReportRows(tableRequest).thenAccept(data -> {
+            Platform.runLater(() -> buildDynamicTable(resultsTable, data, "Brak danych lipidogramu."));
+        });
+
+        ReportService.fetchSeriesReport(chartRequest).thenAccept(data -> {
+            Platform.runLater(() -> updateSeriesChart(data));
+        });
+
+        ReportService.fetchRawData(tableRequest).thenAccept(rawData -> {
+            Platform.runLater(() -> buildDynamicTable(rawDataTable, rawData, "Brak surowych danych lipidogramu."));
+        });
+    }
+
+    private static void updateChart(List<ReportDataPoint> data) {
         // Wykres
         chartArea.getChildren().clear();
 
@@ -248,17 +303,48 @@ public class ReportView {
         chartArea.getChildren().add(chart);
     }
 
-    private static void buildDynamicRawTable(List<Map<String, Object>> rawData) {
-        rawDataTable.getColumns().clear();
-        rawDataTable.getItems().clear();
+    private static void updateSeriesChart(List<SeriesReportDataPoint> data) {
+        chartArea.getChildren().clear();
 
-        if (rawData == null || rawData.isEmpty()) {
-            rawDataTable.setPlaceholder(new Label("Brak surowych danych dla tych kryteriów."));
+        if (data == null || data.isEmpty()) {
+            chartArea.getChildren().add(new Label("Brak danych spełniających kryteria raportu seryjnego."));
+            return;
+        }
+
+        CategoryAxis xAxis = new CategoryAxis();
+        xAxis.setLabel("Rok urodzenia");
+
+        NumberAxis yAxis = new NumberAxis();
+        yAxis.setLabel("Średni wynik");
+
+        XYChart<String, Number> chart = new LineChart<>(xAxis, yAxis);
+        chart.setTitle("Lipidogram mężczyzn według roku urodzenia");
+
+        Map<String, XYChart.Series<String, Number>> seriesByName = new LinkedHashMap<>();
+        for (SeriesReportDataPoint point : data) {
+            XYChart.Series<String, Number> series = seriesByName.computeIfAbsent(point.series(), name -> {
+                XYChart.Series<String, Number> newSeries = new XYChart.Series<>();
+                newSeries.setName(name);
+                return newSeries;
+            });
+            series.getData().add(new XYChart.Data<>(point.x(), point.value()));
+        }
+
+        chart.getData().addAll(seriesByName.values());
+        chartArea.getChildren().add(chart);
+    }
+
+    private static void buildDynamicTable(TableView<Map<String, Object>> table, List<Map<String, Object>> data, String emptyMessage) {
+        table.getColumns().clear();
+        table.getItems().clear();
+
+        if (data == null || data.isEmpty()) {
+            table.setPlaceholder(new Label(emptyMessage));
             return;
         }
 
         // Zbudowanie kolumn na podstawie kluczy z pierwszego wiersza
-        Map<String, Object> firstRow = rawData.get(0);
+        Map<String, Object> firstRow = data.get(0);
 
         for (String key : firstRow.keySet()) {
             TableColumn<Map<String, Object>, Object> column = new TableColumn<>(key);
@@ -270,11 +356,11 @@ public class ReportView {
             });
 
             column.setPrefWidth(130);
-            rawDataTable.getColumns().add(column);
+            table.getColumns().add(column);
         }
 
         // Wrzucenie wszystkich wierszy do tabeli
-        rawDataTable.getItems().addAll(rawData);
+        table.getItems().addAll(data);
     }
 
     //KLASA POMOCNICZA DLA WYSZUKIWARKI
@@ -285,9 +371,9 @@ public class ReportView {
         private final HBox view;
 
         public ReportFilterRow() {
-            field.getItems().addAll("FACILITY_CITY", "PATIENT_GENDER", "TEST_CODE", "IS_ABNORMAL");
+            field.getItems().addAll("FACILITY_CITY", "FACILITY_NAME", "PATIENT_GENDER", "PATIENT_BIRTH_YEAR", "TEST_CATEGORY", "TEST_CODE", "TEST_NAME", "IS_ABNORMAL", "RESULT_VALUE");
             field.setPrefWidth(120);
-            op.getItems().addAll("EQUALS", "CONTAINS", "GREATER_THAN", "LESS_THAN");
+            op.getItems().addAll("EQUALS", "NOT_EQUALS", "CONTAINS", "GREATER_THAN", "LESS_THAN", "IN", "BETWEEN");
             op.setPrefWidth(100);
             val.setPrefWidth(80);
             view = new HBox(5, field, op, val);

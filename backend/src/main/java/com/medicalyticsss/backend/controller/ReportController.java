@@ -3,6 +3,8 @@ package com.medicalyticsss.backend.controller;
 import com.medicalyticsss.backend.dto.CustomReportRequest;
 import com.medicalyticsss.backend.dto.ReportDataPoint;
 import com.medicalyticsss.backend.dto.ReportSummaryDto;
+import com.medicalyticsss.backend.dto.SeriesReportDataPoint;
+import com.medicalyticsss.backend.dto.SeriesReportRequest;
 import com.medicalyticsss.backend.repository.FactTestResultRepository;
 import com.medicalyticsss.backend.service.CustomReportService;
 import org.springframework.http.ResponseEntity;
@@ -62,6 +64,36 @@ public class ReportController {
         try {
             List<Map<String, Object>> rawData = customReportService.getRawData(request.filters());
             return ResponseEntity.ok(rawData);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // ENDPOINT DLA ELASTYCZNEJ TABELI RAPORTOWEJ (AGREGACJA OPCJONALNA)
+    @PostMapping("/custom/table")
+    public ResponseEntity<List<Map<String, Object>>> getCustomReportRows(@RequestBody CustomReportRequest request) {
+        try {
+            List<Map<String, Object>> reportRows = customReportService.generateCustomReportRows(request);
+            return ResponseEntity.ok(reportRows);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Błędne parametry zapytania: " + e.getMessage());
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    // ENDPOINT DLA WYKRESÓW WIELOSERYJNYCH
+    @PostMapping("/series")
+    public ResponseEntity<List<SeriesReportDataPoint>> getSeriesReport(@RequestBody SeriesReportRequest request) {
+        try {
+            List<SeriesReportDataPoint> reportData = customReportService.generateSeriesReport(request);
+            return ResponseEntity.ok(reportData);
+        } catch (IllegalArgumentException e) {
+            System.err.println("Błędne parametry zapytania: " + e.getMessage());
+            return ResponseEntity.badRequest().build();
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.internalServerError().build();
