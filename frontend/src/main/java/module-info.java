@@ -1,7 +1,9 @@
 module com.example.frontend {
     requires javafx.controls;
     requires javafx.fxml;
+    requires javafx.swing;
     requires java.net.http;
+    requires java.desktop;
     requires com.google.gson;
     requires atlantafx.base;
     requires org.apache.tomcat.embed.core;

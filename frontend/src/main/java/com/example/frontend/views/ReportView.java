@@ -7,16 +7,21 @@ import com.example.frontend.models.ReportFilter;
 import com.example.frontend.models.SeriesReportDataPoint;
 import com.example.frontend.models.SeriesReportRequest;
 import com.example.frontend.services.ReportService;
+import com.example.frontend.utils.ChartExportUtil;
+import com.example.frontend.utils.CsvExportUtil;
 import com.example.frontend.utils.ViewManager;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.chart.*;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -28,6 +33,10 @@ public class ReportView {
     private static TableView<Map<String, Object>> resultsTable;
     private static TableView<Map<String, Object>> rawDataTable; // Tabela dynamiczna (Słowniki)
     private static StackPane chartArea;
+    private static Chart currentChart;
+    private static Button exportReportCsvButton;
+    private static Button exportChartPngButton;
+    private static Button exportRawCsvButton;
 
     // Elementy paska bocznego
     private static ListView<String> groupByList;
@@ -68,17 +77,32 @@ public class ReportView {
         // ZAKŁADKA 1: Data Grid (Agregacje lub wybór bez agregacji)
         resultsTable = new TableView<>();
         resultsTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-        Tab tableTab = new Tab("Raport (Tabela)", resultsTable);
+        exportReportCsvButton = createExportButton(
+                "Eksportuj raport CSV",
+                () -> exportTable(resultsTable, "raport-tabela.csv", "Raport został zapisany do pliku CSV.")
+        );
+        Tab tableTab = new Tab("Raport (Tabela)", createTabContent(exportReportCsvButton, resultsTable));
         tableTab.setClosable(false);
 
         // ZAKŁADKA 2: Wizualizacja (Wykresy)
-        chartArea = new StackPane(new Label("Skonfiguruj i wygeneruj raport, aby zobaczyć wykres"));
-        Tab chartTab = new Tab("Wizualizacja (Wykres)", chartArea);
+        chartArea = new StackPane();
+        chartArea.setPadding(new Insets(10));
+        exportChartPngButton = createExportButton(
+                "Eksportuj wykres PNG",
+                () -> exportChart("wykres-raportu.png")
+        );
+        setChartPlaceholder("Skonfiguruj i wygeneruj raport, aby zobaczyć wykres");
+        Tab chartTab = new Tab("Wizualizacja (Wykres)", createTabContent(exportChartPngButton, chartArea));
         chartTab.setClosable(false);
 
         // ZAKŁADKA 3: Surowe Dane (Dynamiczny SELECT *)
         rawDataTable = new TableView<>();
-        Tab rawTab = new Tab("Surowe Dane (SELECT *)", rawDataTable);
+        rawDataTable.setColumnResizePolicy(TableView.UNCONSTRAINED_RESIZE_POLICY);
+        exportRawCsvButton = createExportButton(
+                "Eksportuj surowe dane CSV",
+                () -> exportTable(rawDataTable, "raport-surowe-dane.csv", "Surowe dane zostały zapisane do pliku CSV.")
+        );
+        Tab rawTab = new Tab("Surowe Dane (SELECT *)", createTabContent(exportRawCsvButton, rawDataTable));
         rawTab.setClosable(false);
 
         // Złożenie zakładek
@@ -89,6 +113,91 @@ public class ReportView {
         root.setCenter(mainArea);
 
         return root;
+    }
+
+    private static VBox createTabContent(Button exportButton, Node content) {
+        HBox toolbar = new HBox(exportButton);
+        toolbar.setAlignment(Pos.CENTER_RIGHT);
+
+        VBox container = new VBox(10, toolbar, content);
+        VBox.setVgrow(content, Priority.ALWAYS);
+        return container;
+    }
+
+    private static Button createExportButton(String text, Runnable action) {
+        Button button = new Button(text);
+        button.getStyleClass().add(Styles.BUTTON_OUTLINED);
+        button.setDisable(true);
+        button.setOnAction(event -> action.run());
+        return button;
+    }
+
+    private static void exportTable(
+            TableView<Map<String, Object>> table,
+            String suggestedFileName,
+            String successMessage
+    ) {
+        if (table.getItems().isEmpty()) {
+            showAlert(Alert.AlertType.WARNING, "Brak danych", "Najpierw wygeneruj raport, aby zapisać go do CSV.");
+            return;
+        }
+
+        try {
+            Path savedPath = CsvExportUtil.exportTable(table, "Zapisz raport CSV", suggestedFileName);
+            if (savedPath != null) {
+                showAlert(Alert.AlertType.INFORMATION, "Eksport zakończony", successMessage + "\n\n" + savedPath.toAbsolutePath());
+            }
+        } catch (IOException exception) {
+            showAlert(Alert.AlertType.ERROR, "Błąd eksportu", "Nie udało się zapisać pliku CSV.\n\n" + exception.getMessage());
+        }
+    }
+
+    private static void exportChart(String suggestedFileName) {
+        if (currentChart == null) {
+            showAlert(Alert.AlertType.WARNING, "Brak wykresu", "Wygeneruj wykres przed zapisaniem go do pliku PNG.");
+            return;
+        }
+
+        try {
+            Path savedPath = ChartExportUtil.exportChart(currentChart, "Zapisz wykres PNG", suggestedFileName);
+            if (savedPath != null) {
+                showAlert(Alert.AlertType.INFORMATION, "Eksport zakończony", "Wykres został zapisany do pliku PNG.\n\n" + savedPath.toAbsolutePath());
+            }
+        } catch (IOException exception) {
+            showAlert(Alert.AlertType.ERROR, "Błąd eksportu", "Nie udało się zapisać wykresu do PNG.\n\n" + exception.getMessage());
+        }
+    }
+
+    private static void showAlert(Alert.AlertType type, String title, String message) {
+        Alert alert = new Alert(type);
+        alert.setTitle(title);
+        alert.setHeaderText(null);
+        alert.setContentText(message);
+        alert.showAndWait();
+    }
+
+    private static void setChartPlaceholder(String message) {
+        chartArea.getChildren().setAll(new Label(message));
+        currentChart = null;
+        updateExportButtonsState();
+    }
+
+    private static void setChartContent(Chart chart) {
+        chartArea.getChildren().setAll(chart);
+        currentChart = chart;
+        updateExportButtonsState();
+    }
+
+    private static void updateExportButtonsState() {
+        if (exportReportCsvButton != null) {
+            exportReportCsvButton.setDisable(resultsTable == null || resultsTable.getItems().isEmpty());
+        }
+        if (exportRawCsvButton != null) {
+            exportRawCsvButton.setDisable(rawDataTable == null || rawDataTable.getItems().isEmpty());
+        }
+        if (exportChartPngButton != null) {
+            exportChartPngButton.setDisable(currentChart == null);
+        }
     }
 
     private static VBox createSidebar() {
@@ -198,7 +307,7 @@ public class ReportView {
                 Platform.runLater(() -> updateChart(data));
             });
         } else {
-            chartArea.getChildren().setAll(new Label("Wybierz agregację, aby wygenerować wykres."));
+            setChartPlaceholder("Wybierz agregację, aby wygenerować wykres.");
         }
 
         // STRZAŁ PO SUROWE DANE
@@ -246,10 +355,8 @@ public class ReportView {
 
     private static void updateChart(List<ReportDataPoint> data) {
         // Wykres
-        chartArea.getChildren().clear();
-
         if (data.isEmpty()) {
-            chartArea.getChildren().add(new Label("Brak danych spełniających kryteria."));
+            setChartPlaceholder("Brak danych spełniających kryteria.");
             return;
         }
 
@@ -261,7 +368,7 @@ public class ReportView {
             for (ReportDataPoint dp : data) {
                 pieChart.getData().add(new PieChart.Data(dp.label(), dp.value().doubleValue()));
             }
-            chartArea.getChildren().add(pieChart);
+            setChartContent(pieChart);
             return;
         }
 
@@ -294,14 +401,12 @@ public class ReportView {
         }
 
         chart.getData().add(series);
-        chartArea.getChildren().add(chart);
+        setChartContent(chart);
     }
 
     private static void updateSeriesChart(List<SeriesReportDataPoint> data) {
-        chartArea.getChildren().clear();
-
         if (data == null || data.isEmpty()) {
-            chartArea.getChildren().add(new Label("Brak danych spełniających kryteria raportu seryjnego."));
+            setChartPlaceholder("Brak danych spełniających kryteria raportu seryjnego.");
             return;
         }
 
@@ -325,7 +430,7 @@ public class ReportView {
         }
 
         chart.getData().addAll(seriesByName.values());
-        chartArea.getChildren().add(chart);
+        setChartContent(chart);
     }
 
     private static void buildDynamicTable(TableView<Map<String, Object>> table, List<Map<String, Object>> data, String emptyMessage) {
@@ -334,6 +439,7 @@ public class ReportView {
 
         if (data == null || data.isEmpty()) {
             table.setPlaceholder(new Label(emptyMessage));
+            updateExportButtonsState();
             return;
         }
 
@@ -349,12 +455,14 @@ public class ReportView {
                 return new SimpleObjectProperty<>(value != null ? value : "Brak danych");
             });
 
-            column.setPrefWidth(130);
+            column.setMinWidth(130);
+            column.setPrefWidth(160);
             table.getColumns().add(column);
         }
 
         // Wrzucenie wszystkich wierszy do tabeli
         table.getItems().addAll(data);
+        updateExportButtonsState();
     }
 
     //KLASA POMOCNICZA DLA WYSZUKIWARKI
