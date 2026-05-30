@@ -3,6 +3,8 @@ package com.example.frontend.services;
 import com.example.frontend.models.CustomReportRequest;
 import com.example.frontend.models.ReportDataPoint;
 import com.example.frontend.models.ReportSummary;
+import com.example.frontend.models.SeriesReportDataPoint;
+import com.example.frontend.models.SeriesReportRequest;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -56,6 +58,60 @@ public class ReportService {
                     });
         } catch (Exception e) {
             System.err.println("Błąd lokalny: " + e.getMessage());
+            return CompletableFuture.completedFuture(List.of());
+        }
+    }
+
+    // Elastyczne wiersze raportowe (agregacja jest opcjonalna)
+    public static CompletableFuture<List<Map<String, Object>>> fetchCustomReportRows(CustomReportRequest requestBody) {
+        try {
+            String jsonBody = gson.toJson(requestBody);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/api/reports/custom/table"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            return AuthService.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                    .thenApply(response -> {
+                        if (response.statusCode() == 200) {
+                            Type listType = new TypeToken<List<Map<String, Object>>>(){}.getType();
+                            return gson.fromJson(response.body(), listType);
+                        } else {
+                            System.err.println("Błąd pobierania tabeli raportu: " + response.statusCode());
+                            return List.of();
+                        }
+                    });
+        } catch (Exception e) {
+            System.err.println("Błąd lokalny (tabela raportu): " + e.getMessage());
+            return CompletableFuture.completedFuture(List.of());
+        }
+    }
+
+    // Dane wieloseryjne do wykresów
+    public static CompletableFuture<List<SeriesReportDataPoint>> fetchSeriesReport(SeriesReportRequest requestBody) {
+        try {
+            String jsonBody = gson.toJson(requestBody);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("http://localhost:8080/api/reports/series"))
+                    .header("Content-Type", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
+                    .build();
+
+            return AuthService.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                    .thenApply(response -> {
+                        if (response.statusCode() == 200) {
+                            Type listType = new TypeToken<List<SeriesReportDataPoint>>(){}.getType();
+                            return gson.fromJson(response.body(), listType);
+                        } else {
+                            System.err.println("Błąd pobierania raportu seryjnego: " + response.statusCode());
+                            return List.of();
+                        }
+                    });
+        } catch (Exception e) {
+            System.err.println("Błąd lokalny (raport seryjny): " + e.getMessage());
             return CompletableFuture.completedFuture(List.of());
         }
     }

@@ -127,9 +127,23 @@ Moduł agregujący zanonimizowane dane medyczne w celu zasilania dynamicznych wy
 * **URL:** `/api/reports/custom`
 * **Metoda:** `POST`
 * **Typ zawartości:** `application/json`
-* **Parametry (Body):** Obiekt `CustomReportRequest` definiujący m.in. kolumny wymiarów (`selectColumns`), oś wartości (`aggregateColumn`), funkcję matematyczną (`operation` np. COUNT, SUM, AVG), sortowanie oraz listę dynamicznych filtrów (`filters` określające klauzulę WHERE).
+* **Parametry (Body):** Obiekt `CustomReportRequest` definiujący m.in. kolumny wymiarów (`selectColumns`), oś wartości (`aggregateColumn`), funkcję matematyczną (`operation` np. COUNT, SUM, AVG), sortowanie oraz listę dynamicznych filtrów (`filters` określające klauzulę WHERE). Filtry obsługują także operatory `IN` i `BETWEEN` z wartościami rozdzielonymi przecinkami.
 * **Działanie:** Wykorzystuje silnik JPA Criteria API do generowania w pełni dynamicznych zapytań bazodanowych. Automatycznie rozwiązuje relacje (LEFT JOIN) między tabelami i bezpiecznie mapuje filtry z użyciem wzorca Whitelist, zapobiegając ryzyku SQL Injection.
 * **Odpowiedź:** `200 OK` (Zwraca uniwersalną listę punktów danych, np. `[{"label": "Kobieta", "value": 152}, {"label": "Mężczyzna", "value": 98}]`).
+
+#### Elastyczna tabela raportowa
+* **URL:** `/api/reports/custom/table`
+* **Metoda:** `POST`
+* **Typ zawartości:** `application/json`
+* **Działanie:** Zwraca dynamiczne wiersze raportowe jako listę słowników. Agregacja jest opcjonalna: bez `operation` endpoint zwraca unikalne kombinacje wybranych `selectColumns`, a z agregacją dodaje kolumnę wartości, np. `AVG_RESULT_VALUE`.
+* **Odpowiedź:** `200 OK` (np. `[{"PATIENT_BIRTH_YEAR": 1980, "TEST_CODE": "HDL", "AVG_RESULT_VALUE": 55.2}]`).
+
+#### Raport wieloseryjny
+* **URL:** `/api/reports/series`
+* **Metoda:** `POST`
+* **Typ zawartości:** `application/json`
+* **Działanie:** Buduje dane w formacie `x`, `series`, `value`, np. dla wykresu lipidogramu mężczyzn według roku urodzenia (`xAxis=PATIENT_BIRTH_YEAR`, `seriesField=TEST_CODE`, `aggregateColumn=RESULT_VALUE`, `operation=AVG`).
+* **Odpowiedź:** `200 OK` (np. `[{"x": "1980", "series": "HDL", "value": 55.2}]`).
 
 #### Pobieranie Surowych Danych (SELECT *)
 * **URL:** `/api/reports/raw`

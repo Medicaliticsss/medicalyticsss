@@ -3,6 +3,8 @@ package com.medicalyticsss.backend.service;
 import com.medicalyticsss.backend.dto.CustomReportRequest;
 import com.medicalyticsss.backend.dto.ReportDataPoint;
 import com.medicalyticsss.backend.dto.ReportFilter;
+import com.medicalyticsss.backend.dto.SeriesReportDataPoint;
+import com.medicalyticsss.backend.dto.SeriesReportRequest;
 import com.medicalyticsss.backend.enums.ReportField;
 import com.medicalyticsss.backend.model.FactTestResult;
 import jakarta.persistence.EntityManager;
@@ -13,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,13 +54,11 @@ public class CustomReportService {
             query.where(cb.and(predicates.toArray(new Predicate[0])));
         }
 
-        // DYNAMICZNA AGREGACJA (Oś Y)
-        Expression<? extends Number> aggregateExpression = null;
-        if (request.aggregateColumn() != null && request.operation() != null) {
-            Path<Number> targetPath = resolvePath(root, request.aggregateColumn());
-            aggregateExpression = getAggregateExpression(cb, targetPath, request.operation());
-            selections.add(aggregateExpression);
-        }
+        // DYNAMICZNA AGREGACJA (Oś Y). Gdy jej nie podano, endpoint wykresowy pokazuje liczność grup.
+        Expression<? extends Number> aggregateExpression = hasAggregate(request)
+                ? getAggregateExpression(cb, root, request.aggregateColumn(), request.operation())
+                : cb.count(root);
+        selections.add(aggregateExpression);
 
         query.multiselect(selections);
         if (!groupBys.isEmpty()) {
@@ -99,6 +100,85 @@ public class CustomReportService {
 
             return new ReportDataPoint(label, value);
         }).collect(Collectors.toList());
+    }
+
+    // ELASTYCZNA TABELA RAPORTOWA: obsługuje agregację opcjonalną
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> generateCustomReportRows(CustomReportRequest request) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Object[]> query = cb.createQuery(Object[].class);
+        Root<FactTestResult> root = query.from(FactTestResult.class);
+
+        List<ReportField> selectedFields = request.selectColumns() != null
+                ? request.selectColumns()
+                : List.of();
+        boolean aggregateRequested = hasAggregate(request);
+
+        if (selectedFields.isEmpty() && !aggregateRequested) {
+            throw new IllegalArgumentException("Wybierz co najmniej jedną kolumnę albo agregację");
+        }
+
+        List<Selection<?>> selections = new ArrayList<>();
+        List<Expression<?>> groupBys = new ArrayList<>();
+
+        for (ReportField field : selectedFields) {
+            Path<?> path = resolvePath(root, field);
+            selections.add(path);
+            groupBys.add(path);
+        }
+
+        String aggregateLabel = null;
+        Expression<? extends Number> aggregateExpression = null;
+        if (aggregateRequested) {
+            aggregateExpression = getAggregateExpression(cb, root, request.aggregateColumn(), request.operation());
+            selections.add(aggregateExpression);
+            aggregateLabel = getAggregateLabel(request.operation(), request.aggregateColumn());
+        } else {
+            query.distinct(true);
+        }
+
+        applyFilters(cb, query, root, request.filters());
+        query.multiselect(selections);
+        if (aggregateRequested && !groupBys.isEmpty()) {
+            query.groupBy(groupBys);
+        }
+
+        applySort(cb, query, root, request, groupBys, aggregateExpression);
+
+        List<Object[]> results = entityManager.createQuery(query).getResultList();
+        String finalAggregateLabel = aggregateLabel;
+        return results.stream()
+                .map(row -> mapReportRow(row, selectedFields, finalAggregateLabel))
+                .collect(Collectors.toList());
+    }
+
+    // WIELOSERYJNE DANE DO WYKRESÓW, np. X=rok urodzenia, seria=kod badania lipidogramu
+    @Transactional(readOnly = true)
+    public List<SeriesReportDataPoint> generateSeriesReport(SeriesReportRequest request) {
+        if (request.xAxis() == null || request.seriesField() == null) {
+            throw new IllegalArgumentException("Raport seryjny wymaga pól xAxis i seriesField");
+        }
+
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Object[]> query = cb.createQuery(Object[].class);
+        Root<FactTestResult> root = query.from(FactTestResult.class);
+
+        Path<?> xPath = resolvePath(root, request.xAxis());
+        Path<?> seriesPath = resolvePath(root, request.seriesField());
+        String operation = request.operation() != null ? request.operation() : "COUNT";
+        Expression<? extends Number> aggregateExpression =
+                getAggregateExpression(cb, root, request.aggregateColumn(), operation);
+
+        applyFilters(cb, query, root, request.filters());
+        query.multiselect(xPath, seriesPath, aggregateExpression);
+        query.groupBy(xPath, seriesPath);
+
+        boolean desc = request.sortDirection() != null && request.sortDirection().equalsIgnoreCase("DESC");
+        query.orderBy(desc ? cb.desc(xPath) : cb.asc(xPath), cb.asc(seriesPath));
+
+        return entityManager.createQuery(query).getResultList().stream()
+                .map(row -> new SeriesReportDataPoint(formatValue(row[0]), formatValue(row[1]), (Number) row[2]))
+                .collect(Collectors.toList());
     }
 
     //POBIERANIE SUROWYCH DANYCH (SELECT *)
@@ -154,6 +234,76 @@ public class CustomReportService {
         }).collect(Collectors.toList());
     }
 
+    private void applyFilters(CriteriaBuilder cb, CriteriaQuery<?> query, Root<FactTestResult> root, List<ReportFilter> filters) {
+        if (filters == null || filters.isEmpty()) {
+            return;
+        }
+
+        List<Predicate> predicates = new ArrayList<>();
+        for (ReportFilter filter : filters) {
+            predicates.add(buildPredicate(cb, root, filter));
+        }
+        query.where(cb.and(predicates.toArray(new Predicate[0])));
+    }
+
+    private void applySort(
+            CriteriaBuilder cb,
+            CriteriaQuery<?> query,
+            Root<FactTestResult> root,
+            CustomReportRequest request,
+            List<Expression<?>> groupBys,
+            Expression<? extends Number> aggregateExpression
+    ) {
+        if (request.sortDirection() == null) {
+            return;
+        }
+
+        Expression<?> sortExpr = null;
+        if (request.sortByColumn() != null) {
+            sortExpr = resolvePath(root, request.sortByColumn());
+        } else if (aggregateExpression != null) {
+            sortExpr = aggregateExpression;
+        } else if (!groupBys.isEmpty()) {
+            sortExpr = groupBys.get(0);
+        }
+
+        if (sortExpr != null) {
+            Order order = request.sortDirection().equalsIgnoreCase("DESC")
+                    ? cb.desc(sortExpr)
+                    : cb.asc(sortExpr);
+            query.orderBy(order);
+        }
+    }
+
+    private Map<String, Object> mapReportRow(Object[] row, List<ReportField> selectedFields, String aggregateLabel) {
+        Map<String, Object> result = new LinkedHashMap<>();
+        int index = 0;
+        for (ReportField field : selectedFields) {
+            result.put(field.name(), row[index++]);
+        }
+
+        if (aggregateLabel != null) {
+            result.put(aggregateLabel, row[index]);
+        }
+
+        return result;
+    }
+
+    private boolean hasAggregate(CustomReportRequest request) {
+        return request.operation() != null
+                && !request.operation().isBlank()
+                && !request.operation().equalsIgnoreCase("NONE");
+    }
+
+    private String getAggregateLabel(String operation, ReportField aggregateColumn) {
+        String columnName = aggregateColumn != null ? aggregateColumn.name() : "ROWS";
+        return operation.toUpperCase() + "_" + columnName;
+    }
+
+    private String formatValue(Object value) {
+        return value != null ? value.toString() : "Brak";
+    }
+
     // TŁUMACZ PÓL
     @SuppressWarnings("unchecked")
     private <T> Path<T> resolvePath(Root<FactTestResult> root, ReportField field) {
@@ -172,20 +322,45 @@ public class CustomReportService {
     }
 
     // TŁUMACZ OPERACJI MATEMATYCZNYCH
-    private Expression<? extends Number> getAggregateExpression(CriteriaBuilder cb, Path<Number> targetPath, String operation) {
+    @SuppressWarnings("unchecked")
+    private Expression<? extends Number> getAggregateExpression(
+            CriteriaBuilder cb,
+            Root<FactTestResult> root,
+            ReportField aggregateColumn,
+            String operation
+    ) {
         return switch (operation.toUpperCase()) {
-            case "COUNT" -> cb.count(targetPath);
-            case "SUM" -> cb.sum(targetPath);
-            case "AVG" -> cb.avg(targetPath);
+            case "COUNT" -> aggregateColumn != null ? cb.count(resolvePath(root, aggregateColumn)) : cb.count(root);
+            case "SUM" -> cb.sum(resolveNumericPath(root, requireAggregateColumn(aggregateColumn, operation), operation));
+            case "AVG" -> cb.avg(resolveNumericPath(root, requireAggregateColumn(aggregateColumn, operation), operation));
             default -> throw new IllegalArgumentException("Nieobsługiwana operacja: " + operation);
         };
+    }
+
+    @SuppressWarnings("unchecked")
+    private Path<Number> resolveNumericPath(Root<FactTestResult> root, ReportField field, String operation) {
+        Path<?> path = resolvePath(root, field);
+        if (!Number.class.isAssignableFrom(path.getJavaType())) {
+            throw new IllegalArgumentException("Operacja " + operation + " wymaga pola liczbowego");
+        }
+        return (Path<Number>) path;
+    }
+
+    private ReportField requireAggregateColumn(ReportField aggregateColumn, String operation) {
+        if (aggregateColumn == null) {
+            throw new IllegalArgumentException("Operacja " + operation + " wymaga kolumny agregowanej");
+        }
+        return aggregateColumn;
     }
 
     // BUDOWANIE FILTRÓW
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Predicate buildPredicate(CriteriaBuilder cb, Root<FactTestResult> root, ReportFilter filter) {
         Path<?> path = resolvePath(root, filter.field());
-        Object typedValue = castToRequiredType(path.getJavaType(), filter.value());
+        Object typedValue = filter.operator() != com.medicalyticsss.backend.enums.FilterOperator.IN
+                && filter.operator() != com.medicalyticsss.backend.enums.FilterOperator.BETWEEN
+                ? castToRequiredType(path.getJavaType(), filter.value())
+                : null;
 
         return switch (filter.operator()) {
             case EQUALS -> cb.equal(path, typedValue);
@@ -193,7 +368,27 @@ public class CustomReportService {
             case GREATER_THAN -> cb.greaterThan((Expression<Comparable>) path, (Comparable) typedValue);
             case LESS_THAN -> cb.lessThan((Expression<Comparable>) path, (Comparable) typedValue);
             case CONTAINS -> cb.like(cb.lower((Expression<String>) path), "%" + filter.value().toLowerCase() + "%");
+            case IN -> path.in(parseListValues(path.getJavaType(), filter.value()));
+            case BETWEEN -> {
+                List<Object> values = parseListValues(path.getJavaType(), filter.value());
+                if (values.size() != 2) {
+                    throw new IllegalArgumentException("Operator BETWEEN wymaga dwóch wartości rozdzielonych przecinkiem");
+                }
+                yield cb.between((Expression<Comparable>) path, (Comparable) values.get(0), (Comparable) values.get(1));
+            }
         };
+    }
+
+    private List<Object> parseListValues(Class<?> fieldType, String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("Operator listowy wymaga wartości");
+        }
+
+        return Arrays.stream(value.split(","))
+                .map(String::trim)
+                .filter(v -> !v.isBlank())
+                .map(v -> castToRequiredType(fieldType, v))
+                .collect(Collectors.toList());
     }
 
     // RZUTOWANIE TYPÓW
