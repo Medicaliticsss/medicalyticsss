@@ -10,6 +10,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.Authentication;
+import com.medicalyticsss.backend.model.User;
+import com.medicalyticsss.backend.repository.UserRepository;
 
 import java.io.IOException;
 import java.nio.file.*;
@@ -26,24 +29,34 @@ public class FileController {
     private final FileHistoryRepository fileHistoryRepository;
     private final CsvProcessingService csvProcessingService;
     private final ProcessingErrorRepository processingErrorRepository;
+    private final UserRepository userRepository;
 
-    public FileController(FileHistoryRepository fileHistoryRepository, CsvProcessingService csvProcessingService, ProcessingErrorRepository processingErrorRepository) {
+    public FileController(FileHistoryRepository fileHistoryRepository, CsvProcessingService csvProcessingService, ProcessingErrorRepository processingErrorRepository, UserRepository userRepository) {
         this.fileHistoryRepository = fileHistoryRepository;
         this.csvProcessingService = csvProcessingService;
         this.processingErrorRepository = processingErrorRepository;
+        this.userRepository = userRepository;
     }
 
-    // tu ja Natalia dodalam endpointa
+    // tu ja Natalia dodalam endpointa - a potem ZAKTUALIZOWALAM pod filtrowanie uzytkownika
     @GetMapping
-    public ResponseEntity<Iterable<FileHistory>> getAllFiles() {
-        // Pobiera wszystkie rekordy z bazy. Frontend sam zadba o to, żeby
-        // nie wyświetlać użytkownikowi plików ze statusem DELETED.
-        return ResponseEntity.ok(fileHistoryRepository.findAll());
+    public ResponseEntity<Iterable<FileHistory>> getAllFiles(Authentication authentication) {
+
+        // Zabezpieczenie na wypadek, gdyby ktoś z frontendu próbował pobrać pliki bez logowania
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401).build();
+        }
+
+        // 1. Pobieramy login (username) ze Spring Security
+        String username = authentication.getName();
+
+        // 2. Pobieramy z bazy tylko pliki przypisane do tego loginu
+        return ResponseEntity.ok(fileHistoryRepository.findByUser_Username(username));
     }
 
-    // TYLKO WGRYWANIE NA SUCHO
+    // TYLKO WGRYWANIE NA SUCHO - ZAKTUALIZOWANE O USERA
     @PostMapping("/upload")
-    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file, Authentication authentication) { // <--- DODANY PARAMETR
 
         if (file.isEmpty()) {
             return ResponseEntity.badRequest().body("Błąd: Wybrany plik jest pusty!");
@@ -77,9 +90,24 @@ public class FileController {
             FileHistory history = new FileHistory();
             history.setFileName(finalFileName);
             history.setUploadTime(LocalDateTime.now());
-            history.setStatus(FileStatus.UPLOADED); // Zostaje w statusie UPLOADED
+            history.setStatus(FileStatus.UPLOADED);
             history.setSuccessCount(0);
             history.setErrorCount(0);
+
+            // >>> NOWA LOGIKA: Szukamy zalogowanego użytkownika i przypisujemy go do pliku <<<
+            if (authentication != null && authentication.isAuthenticated()) {
+                String username = authentication.getName();
+                Optional<User> loggedInUser = userRepository.findByUsername(username);
+
+                if (loggedInUser.isPresent()) {
+                    history.setUser(loggedInUser.get()); // Przypisujemy pełny obiekt User do pliku!
+                } else {
+                    return ResponseEntity.status(401).body("Błąd: Nie znaleziono zalogowanego użytkownika w bazie.");
+                }
+            } else {
+                return ResponseEntity.status(401).body("Błąd: Brak autoryzacji do wgrania pliku.");
+            }
+            // >>> KONIEC NOWEJ LOGIKI <<<
 
             fileHistoryRepository.save(history);
 
