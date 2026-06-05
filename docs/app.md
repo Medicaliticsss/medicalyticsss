@@ -1,216 +1,216 @@
-# Medicalytics — Application Guide & API Reference
+# Medicalytics — Przewodnik aplikacji i referencja API
 
-This document covers how to run Medicalytics in different environments and describes the REST API exposed by the backend.
+Ten dokument opisuje sposoby uruchomienia Medicalytics w różnych środowiskach oraz REST API udostępniane przez backend.
 
-The desktop client requires a running API. In the **Windows portable package**, the API and database start automatically. In **development mode**, start the backend before the frontend.
+Klient desktopowy wymaga działającego API. W **pakiecie przenośnym na Windows** API i baza danych startują automatycznie. W **trybie deweloperskim** najpierw uruchom backend, potem frontend.
 
 ---
 
-## Running the application
+## Uruchamianie aplikacji
 
-### Option A: Windows portable package (end users)
+### Opcja A: Pakiet przenośny na Windows (użytkownicy końcowi)
 
-1. Download from [GitHub Releases](https://github.com/Medicaliticsss/medicalyticsss/releases/latest)
-2. Extract the zip
-3. Double-click **`Medicalytics.cmd`**
+1. Pobierz z [GitHub Releases](https://github.com/Medicaliticsss/medicalyticsss/releases/latest)
+2. Rozpakuj archiwum zip
+3. Kliknij dwukrotnie **`Medicalytics.cmd`**
 
-No Java, Docker, or MariaDB installation is required.
+Nie trzeba instalować Javy, Dockera ani MariaDB.
 
-### Option B: Docker (API + database)
+### Opcja B: Docker (API + baza danych)
 
-From the repository root:
+Z katalogu głównego repozytorium:
 
 ```bash
 docker compose up -d --build
 ```
 
-This starts MariaDB and the Spring Boot API on port `8080`. Then launch the desktop client:
+Uruchamia MariaDB i API Spring Boot na porcie `8080`. Następnie uruchom klienta desktopowego:
 
 ```bash
 cd frontend
 ../backend/mvnw -Pdev javafx:run
 ```
 
-Or use the standalone desktop build if you have one:
+Możesz też użyć samodzielnej wersji desktopowej, jeśli ją zbudowałeś:
 
 ```bash
 scripts/launch-desktop.sh    # Linux/macOS
 scripts\launch-desktop.bat   # Windows
 ```
 
-### Option C: Local development (IntelliJ / Maven)
+### Opcja C: Lokalny development (IntelliJ / Maven)
 
-**Requirements:** JDK 21+ (frontend), JDK 17+ (backend), MariaDB
+**Wymagania:** JDK 21+ (frontend), JDK 17+ (backend), MariaDB
 
-1. Create the database:
+1. Utwórz bazę danych:
 
 ```sql
 DROP DATABASE IF EXISTS medicalytics;
 CREATE DATABASE medicalytics;
 ```
 
-2. Configure `backend/src/main/resources/application.properties` for your MariaDB connection.
+2. Skonfiguruj połączenie z MariaDB w `backend/src/main/resources/application.properties`.
 
-3. Start the backend:
+3. Uruchom backend:
 
 ```bash
 cd backend
 ./mvnw spring-boot:run
 ```
 
-On startup, **Flyway** applies migrations and **DictionarySeeder** loads the test dictionary from `backend/src/main/resources/dictionaries/test-types.json`.
+Przy starcie **Flyway** stosuje migracje, a **DictionarySeeder** ładuje słownik badań z pliku `backend/src/main/resources/dictionaries/test-types.json`.
 
-4. Start the frontend:
+4. Uruchom frontend:
 
 ```bash
 cd frontend
 ../backend/mvnw -Pdev javafx:run
 ```
 
-### Building the Windows portable package
+### Budowanie pakietu przenośnego na Windows
 
 ```bat
 scripts\build-windows-package.bat
 ```
 
-Output: `dist\medicalytics-windows-portable.zip`
+Wynik: `dist\medicalytics-windows-portable.zip`
 
 ---
 
-## Desktop application screens
+## Ekrany aplikacji desktopowej
 
-| Screen | Purpose |
-|--------|---------|
-| **Login / Register** | User authentication |
-| **Pliki** | Upload, preview, process, and delete CSV files |
-| **Raporty** | Build BI reports, charts, and export CSV/PNG |
-| **Ustawienia** | Account info, password change, test dictionary (MDM) |
+| Ekran | Opis |
+|-------|------|
+| **Logowanie / Rejestracja** | Uwierzytelnianie użytkownika |
+| **Pliki** | Wgrywanie, podgląd, przetwarzanie i usuwanie plików CSV |
+| **Raporty** | Tworzenie raportów BI, wykresów oraz eksport CSV/PNG |
+| **Ustawienia** | Konto, zmiana hasła, słownik badań (MDM) |
 
 ---
 
-## Settings module
+## Moduł ustawień
 
-Available under **Ustawienia** in the desktop app.
+Dostępny w aplikacji pod zakładką **Ustawienia**.
 
-### Account
-- View logged-in username and session status
-- Change password
+### Konto
+- Podgląd nazwy użytkownika i statusu sesji
+- Zmiana hasła
 
-### Test dictionary (MDM)
-- Browse and search the authoritative test catalog (`dim_test_type`)
-- Edit norms and metadata for a test code
-- Export dictionary as JSON
-- Import dictionary from JSON (upserts all entries)
+### Słownik badań (MDM)
+- Przeglądanie i wyszukiwanie autorytatywnego katalogu badań (`dim_test_type`)
+- Edycja norm i metadanych dla kodu badania
+- Eksport słownika do JSON
+- Import słownika z JSON (aktualizacja i dodawanie wpisów)
 
-The dictionary loaded at server startup is the source of truth for anomaly detection. CSV `norma_min`, `norma_max`, and `jednostka` values do **not** override the dictionary.
+Słownik załadowany przy starcie serwera jest źródłem prawdy przy wykrywaniu anomalii. Wartości `norma_min`, `norma_max` i `jednostka` z pliku CSV **nie nadpisują** słownika.
 
-Custom dictionary file at startup (server config):
+Własny plik słownika przy starcie (konfiguracja serwera):
 
 ```bash
-java -jar backend.jar --dictionary.tests.path=file:/path/to/custom-test-types.json
+java -jar backend.jar --dictionary.tests.path=file:/sciezka/do/custom-test-types.json
 ```
 
-JSON format: array of objects with fields `testCode`, `testName`, `categoryName`, `unit`, `normMin`, `normMax`.
+Format JSON: tablica obiektów z polami `testCode`, `testName`, `categoryName`, `unit`, `normMin`, `normMax`.
 
 ---
 
-## API reference
+## Referencja API
 
-Base URL: `http://localhost:8080`
+Adres bazowy: `http://localhost:8080`
 
-All endpoints except `/api/auth/login` and `/api/auth/register` require an active session (cookie-based).
+Wszystkie endpointy poza `/api/auth/login` i `/api/auth/register` wymagają aktywnej sesji (ciasteczka).
 
-### Authentication (`/api/auth`)
+### Autoryzacja (`/api/auth`)
 
-Form-encoded requests (`application/x-www-form-urlencoded`). Passwords are stored as BCrypt hashes.
+Żądania formularzowe (`application/x-www-form-urlencoded`). Hasła są przechowywane jako hashe BCrypt.
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `POST` | `/api/auth/register` | Register (`username`, `password`) |
-| `POST` | `/api/auth/login` | Log in (`username`, `password`) |
-| `GET` | `/api/auth/me` | Current session info |
-| `POST` | `/api/auth/logout` | End session |
+| Metoda | Endpoint | Opis |
+|--------|----------|------|
+| `POST` | `/api/auth/register` | Rejestracja (`username`, `password`) |
+| `POST` | `/api/auth/login` | Logowanie (`username`, `password`) |
+| `GET` | `/api/auth/me` | Informacje o bieżącej sesji |
+| `POST` | `/api/auth/logout` | Wylogowanie |
 
-### Files & ETL (`/api/files`)
+### Pliki i ETL (`/api/files`)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/files` | List uploaded files (`id`, `fileName`, `status`, `uploadTime`) |
-| `POST` | `/api/files/upload` | Upload CSV (`multipart/form-data`, field `file`) |
-| `GET` | `/api/files/{id}/preview` | Stream first rows (`?limit=50` optional) |
-| `POST` | `/api/files/{id}/process` | Run ETL on file |
-| `POST` | `/api/files/{id}/delete` | Soft-delete file and roll back related data |
-| `GET` | `/api/files/{id}/errors` | Processing errors for a file |
+| Metoda | Endpoint | Opis |
+|--------|----------|------|
+| `GET` | `/api/files` | Lista wgranych plików (`id`, `fileName`, `status`, `uploadTime`) |
+| `POST` | `/api/files/upload` | Wgranie CSV (`multipart/form-data`, pole `file`) |
+| `GET` | `/api/files/{id}/preview` | Podgląd pierwszych wierszy (`?limit=50` opcjonalnie) |
+| `POST` | `/api/files/{id}/process` | Uruchomienie ETL na pliku |
+| `POST` | `/api/files/{id}/delete` | Miękkie usunięcie pliku i rollback powiązanych danych |
+| `GET` | `/api/files/{id}/errors` | Błędy przetwarzania pliku |
 
-**Upload behaviour:**
-- Files are stored in `uploads/` on the server
-- Name collisions are resolved automatically (e.g. `file(1).csv`)
-- A `files_history` record is created with status `UPLOADED`
+**Zachowanie przy wgrywaniu:**
+- Pliki są zapisywane w `uploads/` na serwerze
+- Kolizje nazw są rozwiązywane automatycznie (np. `plik(1).csv`)
+- Tworzony jest rekord w `files_history` ze statusem `UPLOADED`
 
-**ETL behaviour:**
-- Strict validation: all 15 CSV columns required per row
-- PESEL is hashed with SHA-256
-- Facility names, cities, and provinces are normalized (Title Case)
-- Anomaly flags use dictionary norms only, not CSV norms
-- File status becomes `SUCCESS`, `PARTIAL_SUCCESS`, or `ERROR`
+**Zachowanie ETL:**
+- Ścisła walidacja: wymagane wszystkie 15 kolumn CSV w każdym wierszu
+- PESEL jest hashowany algorytmem SHA-256
+- Nazwy placówek, miast i województw są normalizowane (Title Case)
+- Flagi anomalii korzystają wyłącznie z norm ze słownika, nie z CSV
+- Status pliku: `SUCCESS`, `PARTIAL_SUCCESS` lub `ERROR`
 
-### Reports (`/api/reports`)
+### Raporty (`/api/reports`)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `GET` | `/api/reports/summary` | Global KPIs (`totalTests`, `normalResults`, `abnormalResults`) |
-| `POST` | `/api/reports/custom` | Chart data (aggregated `ReportDataPoint` list) |
-| `POST` | `/api/reports/custom/table` | Dynamic table rows (optional aggregation) |
-| `POST` | `/api/reports/series` | Multi-series chart data (`x`, `series`, `value`) |
-| `POST` | `/api/reports/raw` | Raw drill-down rows (max 500, filters only) |
+| Metoda | Endpoint | Opis |
+|--------|----------|------|
+| `GET` | `/api/reports/summary` | Globalne KPI (`totalTests`, `normalResults`, `abnormalResults`) |
+| `POST` | `/api/reports/custom` | Dane do wykresów (lista `ReportDataPoint`) |
+| `POST` | `/api/reports/custom/table` | Dynamiczne wiersze tabeli (agregacja opcjonalna) |
+| `POST` | `/api/reports/series` | Dane wieloseryjne (`x`, `series`, `value`) |
+| `POST` | `/api/reports/raw` | Surowe wiersze drill-down (max 500, tylko filtry) |
 
-Report requests use `CustomReportRequest` or `SeriesReportRequest` JSON bodies with whitelisted columns, operations (`COUNT`, `SUM`, `AVG`, etc.), and filters (`IN`, `BETWEEN`, etc.).
+Żądania raportowe używają JSON `CustomReportRequest` lub `SeriesReportRequest` z kolumnami z whitelisty, operacjami (`COUNT`, `SUM`, `AVG` itd.) oraz filtrami (`IN`, `BETWEEN` itd.).
 
-### Settings (`/api/settings`)
+### Ustawienia (`/api/settings`)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| `PUT` | `/api/settings/password` | Change password (`oldPassword`, `newPassword` JSON body) |
-| `GET` | `/api/settings/dictionary` | List test dictionary entries |
-| `GET` | `/api/settings/dictionary/export` | Export dictionary as JSON |
-| `PUT` | `/api/settings/dictionary/{testCode}` | Update one dictionary entry |
-| `POST` | `/api/settings/dictionary/import` | Import/sync dictionary from JSON array |
+| Metoda | Endpoint | Opis |
+|--------|----------|------|
+| `PUT` | `/api/settings/password` | Zmiana hasła (JSON: `oldPassword`, `newPassword`) |
+| `GET` | `/api/settings/dictionary` | Lista wpisów słownika badań |
+| `GET` | `/api/settings/dictionary/export` | Eksport słownika do JSON |
+| `PUT` | `/api/settings/dictionary/{testCode}` | Aktualizacja jednego wpisu |
+| `POST` | `/api/settings/dictionary/import` | Import/synchronizacja słownika z tablicy JSON |
 
 ---
 
-## CSV file format
+## Format pliku CSV
 
-Rows must be comma-separated with **all 15 fields** in this exact order:
+Wiersze muszą być rozdzielone przecinkami i zawierać **wszystkie 15 pól** w dokładnie tej kolejności:
 
 ```
 imie, nazwisko, data_urodzenia, plec, pesel, placowka_nazwa, miasto, wojewodztwo, kod_badania, nazwa_badania, kategoria_badania, wynik, jednostka, norma_min, norma_max
 ```
 
-| Field | Description |
-|-------|-------------|
-| `imie` | First name |
-| `nazwisko` | Last name |
-| `data_urodzenia` | Date of birth |
-| `plec` | Gender |
-| `pesel` | National ID (hashed on import) |
-| `placowka_nazwa` | Facility name |
-| `miasto` | City |
-| `wojewodztwo` | Province |
-| `kod_badania` | Test code |
-| `nazwa_badania` | Test name |
-| `kategoria_badania` | Test category |
-| `wynik` | Result value |
-| `jednostka` | Unit (not used for MDM) |
-| `norma_min` | Min norm from file (not used for MDM) |
-| `norma_max` | Max norm from file (not used for MDM) |
+| Pole | Opis |
+|------|------|
+| `imie` | Imię |
+| `nazwisko` | Nazwisko |
+| `data_urodzenia` | Data urodzenia |
+| `plec` | Płeć |
+| `pesel` | PESEL (hashowany przy imporcie) |
+| `placowka_nazwa` | Nazwa placówki |
+| `miasto` | Miasto |
+| `wojewodztwo` | Województwo |
+| `kod_badania` | Kod badania |
+| `nazwa_badania` | Nazwa badania |
+| `kategoria_badania` | Kategoria badania |
+| `wynik` | Wynik |
+| `jednostka` | Jednostka (nieużywana w MDM) |
+| `norma_min` | Norma min z pliku (nieużywana w MDM) |
+| `norma_max` | Norma max z pliku (nieużywana w MDM) |
 
-Missing fields in a row cause that row to be rejected and logged in `processing_errors`. The file may end up with status `PARTIAL_SUCCESS`.
+Brakujące pola w wierszu powodują jego odrzucenie i zapis w `processing_errors`. Plik może otrzymać status `PARTIAL_SUCCESS`.
 
-Sample files: [`csv/`](../csv/)
+Przykładowe pliki: [`csv/`](../csv/)
 
 ---
 
-## Health check
+## Sprawdzenie stanu API
 
 ```bash
 curl http://localhost:8080/actuator/health
@@ -218,9 +218,9 @@ curl http://localhost:8080/actuator/health
 
 ---
 
-## API test files
+## Pliki testów API
 
-HTTP examples for manual testing:
+Przykłady żądań HTTP do ręcznego testowania:
 
 - [`backend/api-tests/test_logowania.http`](../backend/api-tests/test_logowania.http)
 - [`backend/api-tests/test_sesji.http`](../backend/api-tests/test_sesji.http)

@@ -1,163 +1,163 @@
-# Medicalytics Architecture
+# Architektura Medicalytics
 
-Medicalytics uses a classic **client–server** architecture: a JavaFX desktop client communicates with a Spring Boot REST API backed by a MariaDB data warehouse.
+Medicalytics opiera się na klasycznej architekturze **klient–serwer**: desktopowy klient JavaFX komunikuje się z REST API Spring Boot, które korzysta z hurtowni danych MariaDB.
 
-The system combines **authentication**, **ETL**, **Master Data Management (MDM)**, **file management**, and a **dynamic BI / OLAP reporting engine**.
+System łączy **autoryzację**, **ETL**, **Master Data Management (MDM)**, **zarządzanie plikami** oraz **dynamiczny silnik raportowy BI / OLAP**.
 
 ---
 
-## System components
+## Komponenty systemu
 
-### 1. Frontend (desktop client)
+### 1. Frontend (klient desktopowy)
 
-| Aspect | Detail |
-|--------|--------|
-| Technology | JavaFX 21, AtlantaFX theme |
-| Pattern | MVC with separate views, services, and models |
-| Networking | Async `HttpClient` with cookie-based sessions |
-| Serialization | Gson |
-| Navigation | `ViewManager` routes between screens |
+| Aspekt | Szczegóły |
+|--------|-----------|
+| Technologia | JavaFX 21, motyw AtlantaFX |
+| Wzorzec | MVC z oddzielnymi widokami, serwisami i modelami |
+| Sieć | Asynchroniczny `HttpClient` z sesjami opartymi na ciasteczkach |
+| Serializacja | Gson |
+| Nawigacja | `ViewManager` przełącza ekrany |
 
-**Views:** Login, Register, Main Menu, Files (Dashboard), Reports, Settings
+**Widoki:** Logowanie, Rejestracja, Menu główne, Pliki (Dashboard), Raporty, Ustawienia
 
-**Services:** `AuthService`, `FileService`, `ReportService`, `SettingsService`
+**Serwisy:** `AuthService`, `FileService`, `ReportService`, `SettingsService`
 
-**Key UI capabilities:**
-- Dynamic data grids and chart types (bar, pie, line, scatter)
-- CSV and PNG export
-- Settings: account management and MDM dictionary editor
+**Kluczowe możliwości UI:**
+- Dynamiczne tabele i typy wykresów (słupkowy, kołowy, liniowy, punktowy)
+- Eksport CSV i PNG
+- Ustawienia: zarządzanie kontem i edycja słownika MDM
 
 ### 2. Backend (REST API)
 
-| Aspect | Detail |
-|--------|--------|
-| Technology | Java 17, Spring Boot 4.x |
-| Security | Spring Security, BCrypt passwords, HTTP sessions |
-| Migrations | Flyway |
-| Persistence | Spring Data JPA |
+| Aspekt | Szczegóły |
+|--------|-----------|
+| Technologia | Java 17, Spring Boot 4.x |
+| Bezpieczeństwo | Spring Security, hasła BCrypt, sesje HTTP |
+| Migracje | Flyway |
+| Persystencja | Spring Data JPA |
 
-**Modules:**
+**Moduły:**
 
-- **Authentication** — register, login, session management
-- **File management** — upload with collision handling, streaming preview
-- **ETL** — `CsvProcessingService` with strict row validation
-- **MDM** — `DictionaryService` + `DictionarySeeder` for test norms
-- **BI engine** — `CustomReportService` using JPA Criteria API with whitelist enums (SQL injection safe)
-- **Settings** — password change, dictionary CRUD/import/export
+- **Autoryzacja** — rejestracja, logowanie, zarządzanie sesją
+- **Zarządzanie plikami** — upload z obsługą kolizji nazw, strumieniowy podgląd
+- **ETL** — `CsvProcessingService` ze ścisłą walidacją wierszy
+- **MDM** — `DictionaryService` + `DictionarySeeder` dla norm badań
+- **Silnik BI** — `CustomReportService` oparty na JPA Criteria API z whitelistą enumów (ochrona przed SQL injection)
+- **Ustawienia** — zmiana hasła, CRUD słownika, import/eksport
 
-### 3. Database (star schema)
+### 3. Baza danych (model gwiazdy)
 
-| Aspect | Detail |
-|--------|--------|
-| Engine | MariaDB |
-| Migrations | Flyway (`backend/src/main/resources/db/migration/`) |
+| Aspekt | Szczegóły |
+|--------|-----------|
+| Silnik | MariaDB |
+| Migracje | Flyway (`backend/src/main/resources/db/migration/`) |
 
-**Tables:**
+**Tabele:**
 
-| Table | Role |
-|-------|------|
-| `users` | Application accounts |
-| `files_history` | Uploaded file lifecycle (`UPLOADED` → `SUCCESS` / `PARTIAL_SUCCESS` / `ERROR` → `DELETED`) |
-| `fact_test_results` | Central fact table (test results linked to dimensions) |
-| `dim_patient` | Patient dimension (hashed PESEL, birth year, gender) |
-| `dim_facility` | Facility dimension (normalized name, city, province) |
-| `dim_test_type` | MDM dictionary — authoritative test codes and norms |
-| `processing_errors` | Per-row ETL rejection logs |
+| Tabela | Rola |
+|--------|------|
+| `users` | Konta użytkowników |
+| `files_history` | Cykl życia pliku (`UPLOADED` → `SUCCESS` / `PARTIAL_SUCCESS` / `ERROR` → `DELETED`) |
+| `fact_test_results` | Centralna tabela faktów (wyniki badań powiązane z wymiarami) |
+| `dim_patient` | Wymiar pacjenta (zhashowany PESEL, rok urodzenia, płeć) |
+| `dim_facility` | Wymiar placówki (znormalizowana nazwa, miasto, województwo) |
+| `dim_test_type` | Słownik MDM — autorytatywne kody badań i normy |
+| `processing_errors` | Logi odrzuconych wierszy ETL |
 
 ---
 
-## Deployment models
+## Modele wdrożenia
 
-### Windows portable package
+### Pakiet przenośny na Windows
 
-Bundles MariaDB, JRE, backend JAR, and desktop app. A launcher script (`Medicalytics.cmd`) starts all components and opens the UI.
+Zawiera MariaDB, JRE, JAR backendu i aplikację desktopową. Skrypt uruchomieniowy (`Medicalytics.cmd`) startuje wszystkie komponenty i otwiera interfejs.
 
-User data: `%LOCALAPPDATA%\Medicalytics`
+Dane użytkownika: `%LOCALAPPDATA%\Medicalytics`
 
 ### Docker Compose
 
-Runs MariaDB + backend API in containers. The desktop client runs on the host and connects to `http://localhost:8080`.
+Uruchamia MariaDB i API backendu w kontenerach. Klient desktopowy działa na hoście i łączy się z `http://localhost:8080`.
 
-### Local development
+### Lokalny development
 
-Backend and MariaDB run natively; frontend launched via Maven `javafx:run`.
+Backend i MariaDB działają natywnie; frontend uruchamiany przez Maven `javafx:run`.
 
 ---
 
-## Data flows
+## Przepływy danych
 
-### Authentication
-
-```
-User → LoginView → AuthService → POST /api/auth/login
-     → Backend validates BCrypt hash → HTTP session (JSESSIONID cookie)
-     → UserSession stores username locally
-```
-
-### CSV lifecycle
+### Autoryzacja
 
 ```
-Upload → files_history (UPLOADED) + file on disk
-Preview → stream first N rows from disk
-Process → validate → hash PESEL → normalize text → check norms (MDM)
-        → insert fact_test_results / processing_errors
-        → update file status (SUCCESS | PARTIAL_SUCCESS | ERROR)
-Delete  → soft-delete file, remove facts and errors, keep dimensions
+Użytkownik → LoginView → AuthService → POST /api/auth/login
+         → Backend weryfikuje hash BCrypt → sesja HTTP (ciasteczko JSESSIONID)
+         → UserSession przechowuje nazwę użytkownika lokalnie
 ```
 
-### ETL rules
+### Cykl życia pliku CSV
 
-1. **Strict validation** — all 15 CSV fields required per row
-2. **Anonymization** — PESEL → SHA-256 hash in `dim_patient`
-3. **Text normalization** — Title Case for facility/city/province
-4. **MDM** — anomaly detection uses `dim_test_type` norms only; CSV norm columns are ignored
-5. **Upsert dimensions** — patients and facilities created or updated transactionally
+```
+Upload → files_history (UPLOADED) + plik na dysku
+Podgląd → strumieniowanie pierwszych N wierszy z dysku
+Process → walidacja → hash PESEL → normalizacja tekstu → sprawdzenie norm (MDM)
+        → zapis do fact_test_results / processing_errors
+        → aktualizacja statusu pliku (SUCCESS | PARTIAL_SUCCESS | ERROR)
+Delete  → soft-delete pliku, usunięcie faktów i błędów, zachowanie wymiarów
+```
 
-### Reporting (OLAP)
+### Reguły ETL
+
+1. **Ścisła walidacja** — wymagane wszystkie 15 pól CSV w każdym wierszu
+2. **Anonimizacja** — PESEL → hash SHA-256 w `dim_patient`
+3. **Normalizacja tekstu** — Title Case dla placówki/miasta/województwa
+4. **MDM** — wykrywanie anomalii korzysta wyłącznie z norm w `dim_test_type`; kolumny norm z CSV są ignorowane
+5. **Upsert wymiarów** — pacjenci i placówki tworzeni lub aktualizowani transakcyjnie
+
+### Raportowanie (OLAP)
 
 ```
 ReportView → ReportService → POST /api/reports/*
-          → CustomReportService (Criteria API)
-          → MariaDB aggregation
-          → JSON response → dynamic table columns / charts
+           → CustomReportService (Criteria API)
+           → agregacja w MariaDB
+           → odpowiedź JSON → dynamiczne kolumny tabeli / wykresy
 ```
 
-The BI engine:
-- Resolves required JOINs automatically
-- Uses whitelist enums for columns, operations, and filter operators
-- Performs aggregation in the database (not in application memory)
-- Limits raw drill-down to 500 rows
+Silnik BI:
+- Automatycznie rozwiązuje wymagane JOIN-y
+- Używa enumów z whitelisty dla kolumn, operacji i operatorów filtrów
+- Wykonuje agregację w bazie danych (nie w pamięci aplikacji)
+- Ogranicza surowy drill-down do 500 wierszy
 
-### Settings / MDM dictionary
+### Ustawienia / słownik MDM
 
 ```
-Startup → DictionarySeeder loads test-types.json → dim_test_type
-Settings UI → SettingsService → /api/settings/dictionary
-           → DictionaryService validates and syncs entries
+Start → DictionarySeeder ładuje test-types.json → dim_test_type
+UI Ustawienia → SettingsService → /api/settings/dictionary
+              → DictionaryService waliduje i synchronizuje wpisy
 ```
 
-Import updates existing codes and adds new ones. The dictionary is the single source of truth for medical norms.
+Import aktualizuje istniejące kody i dodaje nowe. Słownik jest jedynym źródłem prawdy dla norm medycznych.
 
 ---
 
-## Security model
+## Model bezpieczeństwa
 
-| Concern | Approach |
-|---------|----------|
-| Passwords | BCrypt hashing |
-| Sessions | HTTP session cookies |
-| API access | Authenticated except login/register |
-| SQL injection | Whitelist-based Criteria API |
-| Sensitive data | PESEL hashed; not stored in plain text |
-| Health endpoint | `/actuator/health` public for monitoring |
+| Obszar | Podejście |
+|--------|----------|
+| Hasła | Hashowanie BCrypt |
+| Sesje | Ciasteczka sesji HTTP |
+| Dostęp do API | Wymaga autoryzacji poza loginem/rejestracją |
+| SQL injection | Criteria API z whitelistą |
+| Dane wrażliwe | PESEL hashowany; nie przechowywany w postaci jawnej |
+| Endpoint health | `/actuator/health` publiczny do monitorowania |
 
 ---
 
-## Build & distribution pipeline
+## Pipeline budowania i dystrybucji
 
-| Output | How it is produced |
-|--------|-------------------|
-| Backend JAR | Maven `package` in `backend/` |
-| Desktop app image | Maven `jpackage` in `frontend/` |
-| Windows portable zip | `scripts/build-windows-package.ps1` |
-| GitHub Release | CI workflow on push to `main` |
+| Wynik | Sposób produkcji |
+|-------|------------------|
+| JAR backendu | Maven `package` w `backend/` |
+| Obraz aplikacji desktopowej | Maven `jpackage` w `frontend/` |
+| Zip przenośny na Windows | `scripts/build-windows-package.ps1` |
+| GitHub Release | Workflow CI przy pushu do `main` |

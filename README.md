@@ -1,53 +1,53 @@
 # Medicalytics
 
-Medicalytics is a desktop application for uploading medical CSV files, processing them into an analytical database, and building reports and charts from anonymized test results.
+Medicalytics to aplikacja desktopowa do wgrywania medycznych plików CSV, przetwarzania ich do bazy analitycznej oraz tworzenia raportów i wykresów na podstawie zanonimizowanych wyników badań.
 
-The system consists of a **JavaFX desktop client** and a **Spring Boot API** backed by **MariaDB**.
+System składa się z **klienta desktopowego JavaFX** oraz **API Spring Boot** opartego na **MariaDB**.
 
-## Download (Windows)
+## Pobieranie (Windows)
 
-**[Download the latest Windows package](https://github.com/Medicaliticsss/medicalyticsss/releases/latest)**
+**[Pobierz najnowszy pakiet na Windows](https://github.com/Medicaliticsss/medicalyticsss/releases/latest)**
 
-Direct link: [medicalytics-windows-portable.zip](https://github.com/Medicaliticsss/medicalyticsss/releases/latest/download/medicalytics-windows-portable.zip)
+Bezpośredni link: [medicalytics-windows-portable.zip](https://github.com/Medicaliticsss/medicalyticsss/releases/latest/download/medicalytics-windows-portable.zip)
 
-1. Extract the zip
-2. Double-click **`Medicalytics.cmd`**
-3. Wait 1–2 minutes on first launch (local database setup)
+1. Rozpakuj archiwum zip
+2. Kliknij dwukrotnie **`Medicalytics.cmd`**
+3. Poczekaj 1–2 minuty przy pierwszym uruchomieniu (konfiguracja lokalnej bazy danych)
 
-No Java, Docker, or MariaDB installation is required. User data is stored in `%LOCALAPPDATA%\Medicalytics`.
+Nie trzeba instalować Javy, Dockera ani MariaDB. Dane użytkownika są przechowywane w `%LOCALAPPDATA%\Medicalytics`.
 
-The package is built automatically on every push to `main` and published under [Releases](https://github.com/Medicaliticsss/medicalyticsss/releases).
+Pakiet jest budowany automatycznie przy każdym pushu do `main` i publikowany w zakładce [Releases](https://github.com/Medicaliticsss/medicalyticsss/releases).
 
-## Basic workflow
+## Podstawowy przepływ pracy
 
 ```
-Download → Launch → Register / Log in → Upload CSV → Process file → Reports → Settings
+Pobierz → Uruchom → Rejestracja / Logowanie → Wgraj CSV → Przetwórz plik → Raporty → Ustawienia
 ```
 
-| Step | What you do | What happens |
-|------|-------------|--------------|
-| 1. **Start** | Run `Medicalytics.cmd` (or start API + desktop app in dev mode) | API and database start automatically in the portable package |
-| 2. **Log in** | Register a new account or sign in | Session is created; actions are tied to your user |
-| 3. **Files** | Upload a `.csv` file from the **Pliki** screen | File is stored on the server; status is `UPLOADED` |
-| 4. **Preview** | Open a preview of the selected file | Server streams the first rows without loading the entire file |
-| 5. **Process** | Click **Przetwórz plik** | ETL validates rows, anonymizes PESEL, loads results into the warehouse |
-| 6. **Reports** | Open **Raporty** | Build charts and tables from processed data (BI / OLAP) |
-| 7. **Settings** | Open **Ustawienia** | Change password, view account info, manage the test dictionary (MDM) |
+| Krok | Co robisz | Co się dzieje |
+|------|-----------|---------------|
+| 1. **Start** | Uruchom `Medicalytics.cmd` (lub API + aplikację desktopową w trybie deweloperskim) | W pakiecie przenośnym API i baza danych startują automatycznie |
+| 2. **Logowanie** | Zarejestruj konto lub zaloguj się | Tworzona jest sesja; akcje są przypisane do użytkownika |
+| 3. **Pliki** | Wgraj plik `.csv` z ekranu **Pliki** | Plik trafia na serwer; status to `UPLOADED` |
+| 4. **Podgląd** | Otwórz podgląd wybranego pliku | Serwer strumieniuje pierwsze wiersze bez ładowania całego pliku |
+| 5. **Przetwarzanie** | Kliknij **Przetwórz plik** | ETL waliduje wiersze, anonimizuje PESEL, ładuje wyniki do hurtowni |
+| 6. **Raporty** | Otwórz **Raporty** | Twórz wykresy i tabele z przetworzonych danych (BI / OLAP) |
+| 7. **Ustawienia** | Otwórz **Ustawienia** | Zmień hasło, sprawdź konto, zarządzaj słownikiem badań (MDM) |
 
-Sample CSV files for testing are in the [`csv/`](csv/) folder.
+Przykładowe pliki CSV do testów znajdują się w folderze [`csv/`](csv/).
 
-## Documentation
+## Dokumentacja
 
-- **[Application guide & API reference](docs/app.md)** — setup options, endpoints, CSV format, settings
-- **[Architecture](docs/architecture.md)** — system design, components, data flows
+- **[Przewodnik aplikacji i referencja API](docs/app.md)** — opcje uruchomienia, endpointy, format CSV, ustawienia
+- **[Architektura](docs/architecture.md)** — projekt systemu, komponenty, przepływy danych
 
-## Development quick start
+## Szybki start dla deweloperów
 
-For contributors running from source:
+Dla osób uruchamiających projekt ze źródeł:
 
 ```bash
 docker compose up -d --build
 cd frontend && ../backend/mvnw -Pdev javafx:run
 ```
 
-See [docs/app.md](docs/app.md) for full development setup.
+Pełna instrukcja uruchomienia deweloperskiego: [docs/app.md](docs/app.md).
