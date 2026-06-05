@@ -2,7 +2,25 @@
 
 Medical data analytics platform with a Spring Boot REST API, MariaDB warehouse, and JavaFX desktop client.
 
-## Standalone desktop app
+## Windows one-click package (for end users)
+
+External users on Windows can run the full app without installing Java, Docker, or MariaDB:
+
+1. Download `medicalytics-windows-portable.zip` from [GitHub Releases](https://github.com/Medicaliticsss/medicalyticsss/releases) or from the **Build Windows Portable Package** workflow artifacts.
+2. Extract the zip.
+3. Double-click **`Medicalytics.cmd`**.
+
+First launch prepares a local database (1–2 minutes). Data is stored in `%LOCALAPPDATA%\Medicalytics`.
+
+To build this package yourself:
+
+```bat
+scripts\build-windows-package.bat
+```
+
+Output: `dist\medicalytics-windows-portable.zip`
+
+## Standalone desktop app (API already running)
 
 Build a self-contained desktop application with a bundled Java runtime. No JDK or Maven is required to run it after building.
 
