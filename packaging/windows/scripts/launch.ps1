@@ -33,24 +33,49 @@ function Reset-MysqlDataDir {
     New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
 }
 
+function Invoke-MysqlAdmin {
+    param([string]$Sql)
+    & $MysqlExe --defaults-file="$MyIni" -u root -e $Sql
+    if (-not $?) {
+        throw "MariaDB admin command failed."
+    }
+}
+
 function Ensure-DatabaseUsers {
-    & $MysqlExe --defaults-file="$MyIni" -u root --protocol=tcp -e @"
+    Invoke-MysqlAdmin @"
 CREATE DATABASE IF NOT EXISTS medicalytics;
 CREATE USER IF NOT EXISTS 'medicalytics'@'localhost' IDENTIFIED BY 'medicalytics';
 CREATE USER IF NOT EXISTS 'medicalytics'@'127.0.0.1' IDENTIFIED BY 'medicalytics';
 GRANT ALL PRIVILEGES ON medicalytics.* TO 'medicalytics'@'localhost';
 GRANT ALL PRIVILEGES ON medicalytics.* TO 'medicalytics'@'127.0.0.1';
 FLUSH PRIVILEGES;
-"@ | Out-Null
-    if ($LASTEXITCODE -ne 0) {
-        throw "Could not configure database users for the API."
+"@
+}
+
+function Wait-MariaDbReady {
+    Write-Host "Waiting for database..."
+    for ($i = 0; $i -lt 45; $i++) {
+        & $MysqlExe --defaults-file="$MyIni" -u root -e "SELECT 1" 2>$null | Out-Null
+        if ($?) { return }
+        Start-Sleep -Seconds 2
+    }
+    throw "MariaDB did not become ready."
+}
+
+function Test-MedicalyticsDbConnection {
+    & $MysqlExe --defaults-file="$MyIni" -u medicalytics -pmedicalytics -h 127.0.0.1 -P 3307 --protocol=tcp -e "SELECT 1" 2>$null | Out-Null
+    if (-not $?) {
+        throw "API database account cannot connect to 127.0.0.1:3307. Delete `"$DataDir`" and try again."
     }
 }
 
 function Get-BackendLogTail {
-    param([string]$LogPath, [int]$Lines = 20)
-    if (-not (Test-Path $LogPath)) { return "(no backend log written)" }
-    return (Get-Content $LogPath -Tail $Lines -ErrorAction SilentlyContinue) -join "`n"
+    param([int]$Lines = 30)
+    if (Test-Path $BackendLog) {
+        $tail = (Get-Content $BackendLog -Tail $Lines -ErrorAction SilentlyContinue) -join "`n"
+        if ($tail) { return $tail }
+    }
+    return "(no backend log written yet)"
 }
 
 $MysqldProcess = $null
@@ -128,8 +153,7 @@ if (-not (Test-Path $InitMarker)) {
     }
 
     $MysqldProcess = Start-Process -FilePath $MysqldExe -ArgumentList @("--defaults-file=$MyIni") -WindowStyle Hidden -PassThru
-    Start-Sleep -Seconds 10
-
+    Wait-MariaDbReady
     Ensure-DatabaseUsers
 
     New-Item -ItemType File -Force -Path $InitMarker | Out-Null
@@ -139,40 +163,34 @@ if (-not (Test-Path $InitMarker)) {
 
 Write-Host "Starting database and API..."
 $MysqldProcess = Start-Process -FilePath $MysqldExe -ArgumentList @("--defaults-file=$MyIni") -WindowStyle Hidden -PassThru
-Start-Sleep -Seconds 6
-
+Wait-MariaDbReady
 Ensure-DatabaseUsers
+Test-MedicalyticsDbConnection
 
 $DataDirForJvm = $DataDir.Replace('\', '/')
 $BackendLog = Join-Path $LogsDir "backend.log"
-$BackendErrorLog = Join-Path $LogsDir "backend-error.log"
 if (Test-Path $BackendLog) { Remove-Item $BackendLog -Force }
-if (Test-Path $BackendErrorLog) { Remove-Item $BackendErrorLog -Force }
 
 # JVM -D options must appear before -jar, otherwise Java ignores them.
 $backendArgs = @(
     "-Dmedicalytics.data.dir=$DataDirForJvm",
+    "-Dlogging.file.name=$DataDirForJvm/logs/backend.log",
     "-jar", $BackendJar,
     "--spring.profiles.active=desktop",
     "--medicalytics.data.dir=$DataDirForJvm"
 )
 $BackendProcess = Start-Process -FilePath $JavaExe -ArgumentList $backendArgs -WindowStyle Hidden -PassThru `
-    -WorkingDirectory (Split-Path $BackendJar -Parent) `
-    -RedirectStandardOutput $BackendLog -RedirectStandardError $BackendErrorLog
+    -WorkingDirectory (Split-Path $BackendJar -Parent)
 
 Write-Host "Waiting for API..."
 $healthy = $false
-for ($i = 0; $i -lt 90; $i++) {
+for ($i = 0; $i -lt 120; $i++) {
     if ($BackendProcess.HasExited) {
-        $logTail = Get-BackendLogTail $BackendErrorLog
-        if ($logTail -eq "(no backend log written)") {
-            $logTail = Get-BackendLogTail $BackendLog
-        }
-        throw "Backend stopped unexpectedly.`n`nLog tail:`n$logTail"
+        throw "Backend stopped unexpectedly.`n`nLog tail:`n$(Get-BackendLogTail)"
     }
 
     try {
-        $response = Invoke-WebRequest -Uri "http://127.0.0.1:8080/actuator/health" -UseBasicParsing -TimeoutSec 2
+        $response = Invoke-WebRequest -Uri "http://127.0.0.1:8080/actuator/health" -UseBasicParsing -TimeoutSec 3
         if ($response.StatusCode -eq 200 -and $response.Content -match '"status"\s*:\s*"UP"') {
             $healthy = $true
             break
@@ -183,11 +201,7 @@ for ($i = 0; $i -lt 90; $i++) {
 }
 
 if (-not $healthy) {
-    $logTail = Get-BackendLogTail $BackendErrorLog
-    if ($logTail -eq "(no backend log written)") {
-        $logTail = Get-BackendLogTail $BackendLog
-    }
-    throw "API did not become ready in time.`n`nLog tail:`n$logTail`n`nFull log: $BackendLog"
+    throw "API did not become ready in time.`n`nLog tail:`n$(Get-BackendLogTail)`n`nFull log: $BackendLog"
 }
 
 Write-Host "Launching Medicalytics..."
