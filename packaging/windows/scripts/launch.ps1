@@ -19,6 +19,42 @@ if (-not (Test-Path $MysqlInstallDbExe)) {
 }
 $MyIni = Join-Path $MysqlDir "my.ini"
 $InitMarker = Join-Path $DataDir "mysql-initialized"
+$MariaDbErrorLog = Join-Path $LogsDir "mariadb-error.log"
+
+function Convert-ToMariaDbPath {
+    param([string]$Path)
+    return $Path.Replace('\', '/')
+}
+
+$MysqlBasedir = Convert-ToMariaDbPath $MysqlDir
+$MysqlDataDirMaria = Convert-ToMariaDbPath $MysqlDataDir
+$PluginDir = Convert-ToMariaDbPath (Join-Path $MysqlDir "lib\plugin")
+$MessagesDir = Convert-ToMariaDbPath (Join-Path $MysqlDir "share")
+$MariaDbErrorLogMaria = Convert-ToMariaDbPath $MariaDbErrorLog
+
+function Write-MyIni {
+    $iniContent = @"
+[mysqld]
+basedir=$MysqlBasedir
+datadir=$MysqlDataDirMaria
+plugin_dir=$PluginDir
+lc-messages-dir=$MessagesDir
+log-error=$MariaDbErrorLogMaria
+port=3307
+bind-address=127.0.0.1
+enable-named-pipe
+socket=Medicalytics
+max_allowed_packet=64M
+character-set-server=utf8mb4
+collation-server=utf8mb4_unicode_ci
+
+[client]
+port=3307
+protocol=pipe
+socket=Medicalytics
+"@
+    Set-Content -Path $MyIni -Value $iniContent -Encoding ASCII
+}
 
 function Test-MysqlSystemTables {
     param([string]$DataDir)
@@ -33,11 +69,20 @@ function Reset-MysqlDataDir {
     New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
 }
 
+function Get-MariaDbErrorTail {
+    param([int]$Lines = 20)
+    if (Test-Path $MariaDbErrorLog) {
+        $tail = (Get-Content $MariaDbErrorLog -Tail $Lines -ErrorAction SilentlyContinue) -join "`n"
+        if ($tail) { return "MariaDB log:`n$tail" }
+    }
+    return "MariaDB log not found at $MariaDbErrorLog"
+}
+
 function Invoke-MysqlAdmin {
     param([string]$Sql)
     & $MysqlExe --defaults-file="$MyIni" -u root -e $Sql
     if (-not $?) {
-        throw "MariaDB admin command failed."
+        throw "MariaDB admin command failed.`n`n$(Get-MariaDbErrorTail)"
     }
 }
 
@@ -52,20 +97,33 @@ FLUSH PRIVILEGES;
 "@
 }
 
+function Start-MariaDbServer {
+    return Start-Process -FilePath $MysqldExe `
+        -ArgumentList @("--defaults-file=$MyIni", "--datadir=$MysqlDataDirMaria") `
+        -WindowStyle Hidden `
+        -PassThru `
+        -WorkingDirectory $MysqlDir
+}
+
 function Wait-MariaDbReady {
     Write-Host "Waiting for database..."
     for ($i = 0; $i -lt 45; $i++) {
+        if ($MysqldProcess -and $MysqldProcess.HasExited) {
+            throw "MariaDB stopped during startup.`n`n$(Get-MariaDbErrorTail)"
+        }
+
         & $MysqlExe --defaults-file="$MyIni" -u root -e "SELECT 1" 2>$null | Out-Null
         if ($?) { return }
+
         Start-Sleep -Seconds 2
     }
-    throw "MariaDB did not become ready."
+    throw "MariaDB did not become ready.`n`n$(Get-MariaDbErrorTail)"
 }
 
 function Test-MedicalyticsDbConnection {
     & $MysqlExe --defaults-file="$MyIni" -u medicalytics -pmedicalytics -h 127.0.0.1 -P 3307 --protocol=tcp -e "SELECT 1" 2>$null | Out-Null
     if (-not $?) {
-        throw "API database account cannot connect to 127.0.0.1:3307. Delete `"$DataDir`" and try again."
+        throw "API database account cannot connect to 127.0.0.1:3307. Delete `"$DataDir`" and try again.`n`n$(Get-MariaDbErrorTail)"
     }
 }
 
@@ -116,20 +174,7 @@ if (-not (Test-Path $BackendJar)) { throw "Backend not found: $BackendJar" }
 if (-not (Test-Path $MysqldExe)) { throw "MariaDB not found: $MysqldExe" }
 if (-not (Test-Path $MysqlInstallDbExe)) { throw "MariaDB installer not found: $MysqlInstallDbExe" }
 
-$iniContent = @"
-[mysqld]
-port=3307
-bind-address=127.0.0.1
-datadir=$($MysqlDataDir.Replace('\', '/'))
-max_allowed_packet=64M
-character-set-server=utf8mb4
-collation-server=utf8mb4_unicode_ci
-console
-
-[client]
-port=3307
-"@
-Set-Content -Path $MyIni -Value $iniContent -Encoding ASCII
+Write-MyIni
 
 if (-not (Test-Path $InitMarker)) {
     Write-Host "First launch: preparing local database (this may take a minute)..."
@@ -143,16 +188,17 @@ if (-not (Test-Path $InitMarker)) {
         New-Item -ItemType Directory -Force -Path $MysqlDataDir | Out-Null
     }
 
-    # MariaDB 11.x does not support mysqld --initialize-insecure (MySQL-only option).
+    Write-MyIni
+
     $installProcess = Start-Process -FilePath $MysqlInstallDbExe -ArgumentList @(
         "--datadir=$MysqlDataDir",
         "-P", "3307"
-    ) -Wait -PassThru -NoNewWindow
+    ) -Wait -PassThru -NoNewWindow -WorkingDirectory $MysqlDir
     if ($installProcess.ExitCode -ne 0) {
         throw "Database initialization failed (exit $($installProcess.ExitCode)). Delete `"$DataDir`" and try again."
     }
 
-    $MysqldProcess = Start-Process -FilePath $MysqldExe -ArgumentList @("--defaults-file=$MyIni") -WindowStyle Hidden -PassThru
+    $MysqldProcess = Start-MariaDbServer
     Wait-MariaDbReady
     Ensure-DatabaseUsers
 
@@ -162,7 +208,8 @@ if (-not (Test-Path $InitMarker)) {
 }
 
 Write-Host "Starting database and API..."
-$MysqldProcess = Start-Process -FilePath $MysqldExe -ArgumentList @("--defaults-file=$MyIni") -WindowStyle Hidden -PassThru
+Write-MyIni
+$MysqldProcess = Start-MariaDbServer
 Wait-MariaDbReady
 Ensure-DatabaseUsers
 Test-MedicalyticsDbConnection
@@ -171,7 +218,6 @@ $DataDirForJvm = $DataDir.Replace('\', '/')
 $BackendLog = Join-Path $LogsDir "backend.log"
 if (Test-Path $BackendLog) { Remove-Item $BackendLog -Force }
 
-# JVM -D options must appear before -jar, otherwise Java ignores them.
 $backendArgs = @(
     "-Dmedicalytics.data.dir=$DataDirForJvm",
     "-Dlogging.file.name=$DataDirForJvm/logs/backend.log",
