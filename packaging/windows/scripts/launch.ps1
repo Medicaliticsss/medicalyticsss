@@ -175,6 +175,65 @@ function Test-MedicalyticsDbConnection {
     }
 }
 
+function Test-ApiPortOpen {
+    $client = New-Object System.Net.Sockets.TcpClient
+    try {
+        $client.Connect("127.0.0.1", 8080)
+        $open = $client.Connected
+        $client.Close()
+        return $open
+    } catch {
+        return $false
+    }
+}
+
+function Test-ApiHealthy {
+    try {
+        $response = Invoke-WebRequest -Uri "http://127.0.0.1:8080/actuator/health" -UseBasicParsing -TimeoutSec 3
+        return ($response.StatusCode -eq 200) -and ($response.Content -match '"status"\s*:\s*"UP"')
+    } catch {
+        $webResponse = $_.Exception.Response
+        if ($webResponse) {
+            try {
+                $reader = New-Object System.IO.StreamReader($webResponse.GetResponseStream())
+                $body = $reader.ReadToEnd()
+                if ($body -match '"status"\s*:\s*"UP"') { return $true }
+            } catch {
+            }
+        }
+        return $false
+    }
+}
+
+function Wait-ForApi {
+    Write-Host "Waiting for API..."
+    $portOpenSince = $null
+    for ($i = 0; $i -lt 120; $i++) {
+        if ($BackendProcess.HasExited) {
+            throw "Backend stopped unexpectedly.`n`nLog tail:`n$(Get-BackendLogTail)"
+        }
+
+        if (Test-ApiHealthy) {
+            return
+        }
+
+        if (Test-ApiPortOpen) {
+            if (-not $portOpenSince) {
+                $portOpenSince = Get-Date
+            } elseif (((Get-Date) - $portOpenSince).TotalSeconds -ge 8) {
+                Write-Host "API port is open and backend is running."
+                return
+            }
+        } else {
+            $portOpenSince = $null
+        }
+
+        Start-Sleep -Seconds 2
+    }
+
+    throw "API did not become ready in time.`n`nLog tail:`n$(Get-BackendLogTail)`n`nFull log: $BackendLog"
+}
+
 function Get-BackendLogTail {
     param([int]$Lines = 30)
     if (Test-Path $BackendLog) {
@@ -274,27 +333,7 @@ $backendArgs = @(
 $BackendProcess = Start-Process -FilePath $JavaExe -ArgumentList $backendArgs -WindowStyle Hidden -PassThru `
     -WorkingDirectory (Split-Path $BackendJar -Parent)
 
-Write-Host "Waiting for API..."
-$healthy = $false
-for ($i = 0; $i -lt 120; $i++) {
-    if ($BackendProcess.HasExited) {
-        throw "Backend stopped unexpectedly.`n`nLog tail:`n$(Get-BackendLogTail)"
-    }
-
-    try {
-        $response = Invoke-WebRequest -Uri "http://127.0.0.1:8080/actuator/health" -UseBasicParsing -TimeoutSec 3
-        if ($response.StatusCode -eq 200 -and $response.Content -match '"status"\s*:\s*"UP"') {
-            $healthy = $true
-            break
-        }
-    } catch {
-        Start-Sleep -Seconds 2
-    }
-}
-
-if (-not $healthy) {
-    throw "API did not become ready in time.`n`nLog tail:`n$(Get-BackendLogTail)`n`nFull log: $BackendLog"
-}
+Wait-ForApi
 
 Write-Host "Launching Medicalytics..."
 $env:MEDICALYTICS_API_URL = "http://127.0.0.1:8080"
