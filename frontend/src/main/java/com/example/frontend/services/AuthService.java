@@ -1,8 +1,8 @@
 package com.example.frontend.services;
 
 import com.example.frontend.models.UserSession;
+import com.example.frontend.utils.ApiConfig;
 import java.net.CookieManager;
-import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -25,7 +25,7 @@ public class AuthService {
         String credentials = "username=" + username + "&password=" + password;
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/api/auth/login"))
+                .uri(ApiConfig.apiUri("/api/auth/login"))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(credentials))
                 .build();
@@ -46,7 +46,7 @@ public class AuthService {
     // --- WYLOGOWANIE ---
     public static CompletableFuture<Boolean> logout() {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/api/auth/logout"))
+                .uri(ApiConfig.apiUri("/api/auth/logout"))
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
 
@@ -68,7 +68,7 @@ public class AuthService {
         String credentials = "username=" + username + "&password=" + password;
 
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/api/auth/register"))
+                .uri(ApiConfig.apiUri("/api/auth/register"))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(credentials))
                 .build();
@@ -84,7 +84,7 @@ public class AuthService {
     // --- SPRAWDZANIE SESJI  ---
     public static CompletableFuture<Boolean> checkSession() {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/api/auth/me"))
+                .uri(ApiConfig.apiUri("/api/auth/me"))
                 .GET()
                 .build();
 
