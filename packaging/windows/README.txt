@@ -22,5 +22,7 @@ To stop the app:
 If startup fails:
   1. Close Medicalytics
   2. Check logs in: %LOCALAPPDATA%\Medicalytics\logs
+     - backend.log (API)
+     - mariadb-error.log (database)
   3. For database errors, delete folder: %LOCALAPPDATA%\Medicalytics
-  4. Start Medicalytics.cmd again
+  4. Download the latest zip and start Medicalytics.cmd again
