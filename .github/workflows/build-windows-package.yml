@@ -7,8 +7,6 @@ on:
       - main
     tags:
       - 'v*'
-  release:
-    types: [published]
 
 permissions:
   contents: write
@@ -63,12 +61,35 @@ jobs:
           if-no-files-found: error
           compression-level: 0
 
-      - name: Attach to GitHub Release
-        if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
+      - name: Publish to GitHub Releases (latest Windows build)
+        if: github.ref == 'refs/heads/main'
+        uses: ncipollo/release-action@v1
+        with:
+          allowUpdates: true
+          tag: windows-portable-latest
+          name: Medicalytics for Windows
+          body: |
+            ## Download and run
+
+            1. Download **medicalytics-windows-portable.zip** below
+            2. Extract the folder
+            3. Double-click **Medicalytics.cmd**
+            4. Wait 1–2 minutes on first launch (database setup)
+
+            No Java, Docker, or MariaDB installation required.
+
+            **Direct link:** https://github.com/${{ github.repository }}/releases/latest/download/medicalytics-windows-portable.zip
+
+            Built from `${{ github.sha }}` (workflow run ${{ github.run_number }}).
+          artifacts: dist/medicalytics-windows-portable.zip
+          makeLatest: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Publish versioned release
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/medicalytics-windows-portable.zip
-          draft: ${{ github.event_name != 'release' }}
           generate_release_notes: true
 
       - name: Build summary
@@ -78,14 +99,14 @@ jobs:
           @"
           ## Windows portable package
 
-          - **Artifact:** medicalytics-windows-portable
           - **File:** medicalytics-windows-portable.zip ($sizeMb MB)
           - **Run:** ${{ github.run_number }}
 
-          ### Download
+          ### Download for end users
 
-          1. Open this workflow run on GitHub
-          2. Scroll to **Artifacts**
-          3. Download **medicalytics-windows-portable**
-          4. Extract and double-click **Medicalytics.cmd**
+          **[GitHub Releases (recommended)](https://github.com/${{ github.repository }}/releases/latest)**
+
+          Direct download: https://github.com/${{ github.repository }}/releases/latest/download/medicalytics-windows-portable.zip
+
+          Extract the zip and double-click **Medicalytics.cmd**.
           "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
