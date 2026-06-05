@@ -15,22 +15,50 @@ $MariaDbUrl = "https://archive.mariadb.org/mariadb-$MariaDbVersion/winx64-packag
 $JreZip = "temurin-jre-17-windows-x64.zip"
 $JreUrl = "https://api.adoptium.net/v3/binary/latest/17/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk"
 
-function Ensure-Download($Url, $Destination) {
-    if ($env:CI -eq "true" -and (Test-Path $Destination)) {
+function Ensure-Download($Url, $Destination, [int]$MinSizeBytes = 1MB) {
+    $parent = Split-Path $Destination -Parent
+    New-Item -ItemType Directory -Force -Path $parent | Out-Null
+
+    if (Test-Path $Destination) {
         Remove-Item $Destination -Force
     }
-    if (-not (Test-Path $Destination)) {
-        New-Item -ItemType Directory -Force -Path (Split-Path $Destination -Parent) | Out-Null
-        Write-Host "Downloading $Url"
+
+    Write-Host "Downloading $Url"
+    if (Get-Command curl.exe -ErrorAction SilentlyContinue) {
+        curl.exe -fL --retry 3 --retry-delay 5 -o $Destination $Url
+        if ($LASTEXITCODE -ne 0) {
+            throw "Download failed for $Url"
+        }
+    } else {
         Invoke-WebRequest -Uri $Url -OutFile $Destination -UseBasicParsing
     }
+
+    if (-not (Test-Path $Destination)) {
+        throw "Download did not create file: $Destination"
+    }
+
+    $size = (Get-Item $Destination).Length
+    if ($size -lt $MinSizeBytes) {
+        throw "Downloaded file is too small ($size bytes): $Destination"
+    }
+
+    Write-Host "Saved $Destination ($([math]::Round($size / 1MB, 1)) MB)"
 }
 
 function Expand-ArchiveClean($ArchivePath, $DestinationPath) {
+    if (-not (Test-Path $ArchivePath)) {
+        throw "Archive not found: $ArchivePath"
+    }
+
     if (Test-Path $DestinationPath) {
         Remove-Item $DestinationPath -Recurse -Force
     }
+
     Expand-Archive -Path $ArchivePath -DestinationPath $DestinationPath -Force
+}
+
+if ($env:CI -eq "true" -and (Test-Path $CacheDir)) {
+    Remove-Item $CacheDir -Recurse -Force
 }
 
 Write-Host "Building backend..."
@@ -53,22 +81,21 @@ if (Test-Path $DistDir) { Remove-Item $DistDir -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $RuntimeDir | Out-Null
 New-Item -ItemType Directory -Force -Path (Join-Path $RuntimeDir "backend") | Out-Null
 
-Ensure-Download $MariaDbUrl (Join-Path $CacheDir $MariaDbZip)
-Ensure-Download $JreUrl (Join-Path $CacheDir $JreZip)
+$mariadbArchive = Join-Path $CacheDir $MariaDbZip
+$jreArchive = Join-Path $CacheDir $JreZip
 
-if ($env:CI -eq "true" -and (Test-Path $CacheDir)) {
-    Remove-Item $CacheDir -Recurse -Force
-}
+Ensure-Download $MariaDbUrl $mariadbArchive 50MB
+Ensure-Download $JreUrl $jreArchive 30MB
 
 Write-Host "Unpacking runtime dependencies..."
 $mariadbExtractDir = Join-Path $CacheDir "mariadb-extract"
 $jreExtractDir = Join-Path $CacheDir "jre-extract"
-Expand-ArchiveClean (Join-Path $CacheDir $MariaDbZip) $mariadbExtractDir
+Expand-ArchiveClean $mariadbArchive $mariadbExtractDir
 $MariaDbExtracted = Get-ChildItem $mariadbExtractDir | Where-Object { $_.PSIsContainer } | Select-Object -First 1
 if (-not $MariaDbExtracted) { throw "MariaDB archive has unexpected structure." }
 Copy-Item -Path $MariaDbExtracted.FullName -Destination (Join-Path $RuntimeDir "mariadb") -Recurse
 
-Expand-ArchiveClean (Join-Path $CacheDir $JreZip) $jreExtractDir
+Expand-ArchiveClean $jreArchive $jreExtractDir
 $JreExtracted = Get-ChildItem $jreExtractDir | Where-Object { $_.PSIsContainer } | Select-Object -First 1
 if (-not $JreExtracted) { throw "JRE archive has unexpected structure." }
 Copy-Item -Path $JreExtracted.FullName -Destination (Join-Path $RuntimeDir "jre") -Recurse
