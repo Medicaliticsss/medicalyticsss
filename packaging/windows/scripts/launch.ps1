@@ -42,16 +42,13 @@ lc-messages-dir=$MessagesDir
 log-error=$MariaDbErrorLogMaria
 port=3307
 bind-address=127.0.0.1
-enable-named-pipe
-socket=Medicalytics
 max_allowed_packet=64M
 character-set-server=utf8mb4
 collation-server=utf8mb4_unicode_ci
 
 [client]
+host=127.0.0.1
 port=3307
-protocol=pipe
-socket=Medicalytics
 "@
     Set-Content -Path $MyIni -Value $iniContent -Encoding ASCII
 }
@@ -78,12 +75,39 @@ function Get-MariaDbErrorTail {
     return "MariaDB log not found at $MariaDbErrorLog"
 }
 
+function Invoke-MysqlTcp {
+    param(
+        [string]$Sql,
+        [string]$User = "root",
+        [string]$Password = "",
+        [string]$HostName = "127.0.0.1"
+    )
+
+    $args = @(
+        "--defaults-file=$MyIni",
+        "--protocol=tcp",
+        "-h", $HostName,
+        "-P", "3307",
+        "-u", $User,
+        "-e", $Sql
+    )
+    if ($Password) {
+        $args += "-p$Password"
+    }
+
+    $output = & $MysqlExe @args 2>&1
+    if (-not $?) {
+        $details = ($output | Out-String).Trim()
+        if ($details) {
+            throw "MariaDB command failed: $details`n`n$(Get-MariaDbErrorTail)"
+        }
+        throw "MariaDB command failed.`n`n$(Get-MariaDbErrorTail)"
+    }
+}
+
 function Invoke-MysqlAdmin {
     param([string]$Sql)
-    & $MysqlExe --defaults-file="$MyIni" -u root -e $Sql
-    if (-not $?) {
-        throw "MariaDB admin command failed.`n`n$(Get-MariaDbErrorTail)"
-    }
+    Invoke-MysqlTcp -Sql $Sql -User "root" -HostName "localhost"
 }
 
 function Ensure-DatabaseUsers {
@@ -112,18 +136,21 @@ function Wait-MariaDbReady {
             throw "MariaDB stopped during startup.`n`n$(Get-MariaDbErrorTail)"
         }
 
-        & $MysqlExe --defaults-file="$MyIni" -u root -e "SELECT 1" 2>$null | Out-Null
-        if ($?) { return }
-
-        Start-Sleep -Seconds 2
+        try {
+            Invoke-MysqlTcp -Sql "SELECT 1" -User "root" -HostName "localhost" | Out-Null
+            return
+        } catch {
+            Start-Sleep -Seconds 2
+        }
     }
     throw "MariaDB did not become ready.`n`n$(Get-MariaDbErrorTail)"
 }
 
 function Test-MedicalyticsDbConnection {
-    & $MysqlExe --defaults-file="$MyIni" -u medicalytics -pmedicalytics -h 127.0.0.1 -P 3307 --protocol=tcp -e "SELECT 1" 2>$null | Out-Null
-    if (-not $?) {
-        throw "API database account cannot connect to 127.0.0.1:3307. Delete `"$DataDir`" and try again.`n`n$(Get-MariaDbErrorTail)"
+    try {
+        Invoke-MysqlTcp -Sql "SELECT 1" -User "medicalytics" -Password "medicalytics" | Out-Null
+    } catch {
+        throw "API database account cannot connect to 127.0.0.1:3307. Delete `"$DataDir`" and try again.`n`n$($_.Exception.Message)"
     }
 }
 
@@ -144,11 +171,8 @@ function Stop-Services {
         Stop-Process -Id $BackendProcess.Id -Force -ErrorAction SilentlyContinue
     }
     if ($MysqldProcess -and -not $MysqldProcess.HasExited) {
-        & $MysqlExe --defaults-file="$MyIni" -u root -e "SHUTDOWN;" 2>$null | Out-Null
+        Stop-Process -Id $MysqldProcess.Id -Force -ErrorAction SilentlyContinue
         Start-Sleep -Seconds 2
-        if (-not $MysqldProcess.HasExited) {
-            Stop-Process -Id $MysqldProcess.Id -Force -ErrorAction SilentlyContinue
-        }
     }
 }
 
