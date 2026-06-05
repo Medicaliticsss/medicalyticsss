@@ -119,10 +119,14 @@ public class DictionarySettingsView {
             setStatus("Ładowanie słownika...", null);
         }
 
-        SettingsService.fetchDictionary().thenAccept(entries -> Platform.runLater(() -> {
-            dictionaryEntries.setAll(entries);
-            if (userInitiated || !statusLabel.getText().toLowerCase().contains("pomyślnie")) {
-                setStatus("Załadowano wpisów: " + entries.size(), true);
+        SettingsService.fetchDictionary().thenAccept(result -> Platform.runLater(() -> {
+            dictionaryEntries.setAll(result.getEntries());
+            if (!result.isSuccess()) {
+                setStatus(result.getErrorMessage(), false);
+                return;
+            }
+            if (userInitiated || result.getEntries().isEmpty()) {
+                setStatus("Załadowano wpisów: " + result.getEntries().size(), true);
             }
         }));
     }
