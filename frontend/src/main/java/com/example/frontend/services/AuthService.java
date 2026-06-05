@@ -91,7 +91,12 @@ public class AuthService {
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     if (response.statusCode() == 200) {
-                        UserSession.getInstance().login(response.body());
+                        String body = response.body();
+                        String prefix = "Zalogowany jako: ";
+                        String username = body.startsWith(prefix)
+                                ? body.substring(prefix.length()).trim()
+                                : body.trim();
+                        UserSession.getInstance().login(username);
                         return true;
                     }
                     return false;
