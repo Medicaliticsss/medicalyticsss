@@ -11,10 +11,14 @@ import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.PasswordField;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 public class SettingsView {
@@ -23,7 +27,7 @@ public class SettingsView {
 
     public static Parent getView() {
         BorderPane root = new BorderPane();
-        root.setPadding(new Insets(40));
+        root.setPadding(new Insets(30));
 
         Label titleLabel = new Label("Ustawienia");
         titleLabel.getStyleClass().add(Styles.TITLE_1);
@@ -36,8 +40,27 @@ public class SettingsView {
         topBar.setAlignment(Pos.CENTER_LEFT);
         root.setTop(topBar);
 
+        Tab accountTab = new Tab("Konto", createAccountTab());
+        accountTab.setClosable(false);
+
+        Tab dictionaryTab = new Tab("Słownik badań", DictionarySettingsView.getView());
+        dictionaryTab.setClosable(false);
+
+        TabPane tabPane = new TabPane(accountTab, dictionaryTab);
+        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        VBox.setVgrow(tabPane, Priority.ALWAYS);
+        root.setCenter(tabPane);
+
+        return root;
+    }
+
+    private static Parent createAccountTab() {
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setFitToWidth(true);
+
         VBox content = new VBox(24);
-        content.setMaxWidth(520);
+        content.setPadding(new Insets(10));
+        content.setMaxWidth(560);
         content.setAlignment(Pos.TOP_LEFT);
 
         Label accountSectionTitle = new Label("Konto");
@@ -71,7 +94,6 @@ public class SettingsView {
         }));
 
         VBox accountSection = new VBox(10, accountSectionTitle, usernameLabel, sessionLabel);
-
         Separator separator = new Separator();
 
         Label passwordSectionTitle = new Label("Zmiana hasła");
@@ -105,9 +127,9 @@ public class SettingsView {
         passwordForm.add(newPasswordField, 1, 1);
         passwordForm.add(new Label("Potwierdź hasło:"), 0, 2);
         passwordForm.add(confirmPasswordField, 1, 2);
-        GridPane.setHgrow(oldPasswordField, javafx.scene.layout.Priority.ALWAYS);
-        GridPane.setHgrow(newPasswordField, javafx.scene.layout.Priority.ALWAYS);
-        GridPane.setHgrow(confirmPasswordField, javafx.scene.layout.Priority.ALWAYS);
+        GridPane.setHgrow(oldPasswordField, Priority.ALWAYS);
+        GridPane.setHgrow(newPasswordField, Priority.ALWAYS);
+        GridPane.setHgrow(confirmPasswordField, Priority.ALWAYS);
 
         changePasswordButton.setOnAction(e -> {
             String oldPassword = oldPasswordField.getText();
@@ -163,9 +185,8 @@ public class SettingsView {
         );
 
         content.getChildren().addAll(accountSection, separator, passwordSection);
-        root.setCenter(content);
-
-        return root;
+        scrollPane.setContent(content);
+        return scrollPane;
     }
 
     private static void showPasswordStatus(Label label, String message, boolean success) {
