@@ -1,5 +1,6 @@
 package com.example.frontend.views;
 
+import com.example.frontend.models.UserSession;
 import com.example.frontend.services.AuthService;
 import com.example.frontend.utils.ViewManager;
 import atlantafx.base.theme.Styles;
@@ -11,6 +12,8 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 public class LoginView {
     public static Parent getView() {
@@ -22,9 +25,18 @@ public class LoginView {
         titleLabel.getStyleClass().add(Styles.TITLE_2);
         titleLabel.setStyle("-fx-text-fill: #FF0055;");
 
-        DropShadow neonGlow = new DropShadow();
-        neonGlow.setColor(Color.web("#FF0055"));
-        titleLabel.setEffect(neonGlow);
+        ImageView logoView = new ImageView();
+        try {
+            Image logoImage = new Image(LoginView.class.getResourceAsStream("/images/przezroczyste.png"));
+            logoView.setImage(logoImage);
+            logoView.setFitWidth(350);
+            logoView.setPreserveRatio(true);
+        } catch (Exception e) {
+            System.err.println("Błąd ładowania logo: " + e.getMessage());
+        }
+        Label screenTitle = new Label("Logowanie");
+        screenTitle.getStyleClass().add(Styles.TITLE_3);
+        screenTitle.setStyle("-fx-text-fill: #888888;");
 
         TextField usernameInput = new TextField();
         usernameInput.setPromptText("Login");
@@ -45,6 +57,8 @@ public class LoginView {
             AuthService.login(usernameInput.getText(), passwordInput.getText()).thenAccept(res -> {
                 Platform.runLater(() -> {
                     if (res.equals("SUCCESS")) {
+                        UserSession.getInstance().startSession(usernameInput.getText());
+
                         ViewManager.switchView(MainMenuView.getView());
                     } else {
                         errorLabel.setText(res);
@@ -52,13 +66,11 @@ public class LoginView {
                 });
             });
         });
-
         Button registerButton = new Button("Zarejestruj się");
         registerButton.setMaxWidth(250);
         registerButton.getStyleClass().add(Styles.BUTTON_OUTLINED);
         registerButton.setOnAction(e -> ViewManager.switchView(RegisterView.getView()));
 
-        layout.getChildren().addAll(titleLabel, usernameInput, passwordInput, loginButton, registerButton, errorLabel);
-        return layout;
+        layout.getChildren().addAll(logoView, screenTitle, usernameInput, passwordInput, loginButton, registerButton, errorLabel);        return layout;
     }
 }

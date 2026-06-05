@@ -1,11 +1,7 @@
 package com.example.frontend.views;
 
 import atlantafx.base.theme.Styles;
-import com.example.frontend.models.CustomReportRequest;
-import com.example.frontend.models.ReportDataPoint;
-import com.example.frontend.models.ReportFilter;
-import com.example.frontend.models.SeriesReportDataPoint;
-import com.example.frontend.models.SeriesReportRequest;
+import com.example.frontend.models.*;
 import com.example.frontend.services.ReportService;
 import com.example.frontend.utils.ChartExportUtil;
 import com.example.frontend.utils.CsvExportUtil;
@@ -111,6 +107,7 @@ public class ReportView {
 
         mainArea.getChildren().addAll(header, resultsTabs);
         root.setCenter(mainArea);
+        root.setBottom(UserSession.getInstance().createFooter());
 
         return root;
     }

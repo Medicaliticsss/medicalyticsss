@@ -1,6 +1,7 @@
 package com.example.frontend.views;
 
 import com.example.frontend.models.FileItem;
+import com.example.frontend.models.UserSession;
 import com.example.frontend.services.FileService;
 import com.example.frontend.utils.ViewManager;
 import atlantafx.base.theme.Styles;
@@ -219,7 +220,10 @@ public class DashboardView {
 
         controlPanel.getChildren().addAll(welcomeLabel, refreshBtn, fileListView, uploadBtn, processBtn, previewBtn, deleteBtn, fileStatusLabel, backBtn);
         mainLayout.getChildren().addAll(previewPanel, controlPanel);
+        BorderPane root = new BorderPane();
+        root.setCenter(mainLayout);
+        root.setBottom(UserSession.getInstance().createFooter());
 
-        return mainLayout;
+        return root;
     }
 }
