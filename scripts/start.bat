@@ -55,6 +55,8 @@ if exist "dist\frontend\bin\app.bat" (
 )
 
 if exist "backend\mvnw.cmd" (
+  call "%~dp0setup-jdk.bat"
+  if errorlevel 1 exit /b 1
   echo Launching desktop app with Maven...
   pushd frontend
   call ..\backend\mvnw.cmd -q -Pdev javafx:run
