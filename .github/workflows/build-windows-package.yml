@@ -1,0 +1,47 @@
+name: Build Windows Portable Package
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - 'backend/**'
+      - 'packaging/windows/**'
+      - 'scripts/build-windows-package.*'
+      - '.github/workflows/build-windows-package.yml'
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build portable Windows package
+        shell: pwsh
+        run: ./scripts/build-windows-package.ps1
+
+      - name: Upload portable package
+        uses: actions/upload-artifact@v4
+        with:
+          name: medicalytics-windows-portable
+          path: dist/medicalytics-windows-portable.zip
+          if-no-files-found: error
+
+      - name: Attach to GitHub Release
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/medicalytics-windows-portable.zip
