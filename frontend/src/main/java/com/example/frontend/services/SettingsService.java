@@ -1,17 +1,26 @@
 package com.example.frontend.services;
 
 import com.example.frontend.models.AccountInfo;
+import com.example.frontend.models.DictionaryImportResult;
 import com.example.frontend.models.PasswordChangeRequest;
+import com.example.frontend.models.TestTypeEntry;
 import com.example.frontend.utils.ApiConfig;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class SettingsService {
 
     private static final Gson gson = new Gson();
+    private static final Gson prettyGson = new GsonBuilder().setPrettyPrinting().create();
     private static final String SESSION_PREFIX = "Zalogowany jako: ";
+    private static final Type DICTIONARY_LIST_TYPE = new TypeToken<List<TestTypeEntry>>() {}.getType();
 
     private SettingsService() {
     }
@@ -46,9 +55,70 @@ public class SettingsService {
                 .build();
 
         return AuthService.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(HttpResponse::body)
+                .exceptionally(ex -> "Błąd połączenia: " + ex.getMessage());
+    }
+
+    public static CompletableFuture<List<TestTypeEntry>> fetchDictionary() {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(ApiConfig.apiUri("/api/settings/dictionary"))
+                .GET()
+                .build();
+
+        return AuthService.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     if (response.statusCode() == 200) {
-                        return response.body();
+                        List<TestTypeEntry> entries = gson.fromJson(response.body(), DICTIONARY_LIST_TYPE);
+                        return entries != null ? entries : Collections.<TestTypeEntry>emptyList();
+                    }
+                    return Collections.<TestTypeEntry>emptyList();
+                })
+                .exceptionally(ex -> Collections.<TestTypeEntry>emptyList());
+    }
+
+    public static CompletableFuture<String> updateDictionaryEntry(TestTypeEntry entry) {
+        String jsonBody = gson.toJson(entry);
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(ApiConfig.apiUri("/api/settings/dictionary/" + entry.getTestCode()))
+                .header("Content-Type", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofString(jsonBody))
+                .build();
+
+        return AuthService.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> response.statusCode() == 200
+                        ? "Wpis słownika został zaktualizowany."
+                        : response.body())
+                .exceptionally(ex -> "Błąd połączenia: " + ex.getMessage());
+    }
+
+    public static CompletableFuture<String> exportDictionaryJson() {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(ApiConfig.apiUri("/api/settings/dictionary/export"))
+                .GET()
+                .build();
+
+        return AuthService.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> response.statusCode() == 200
+                        ? prettyGson.toJson(gson.fromJson(response.body(), DICTIONARY_LIST_TYPE))
+                        : response.body())
+                .exceptionally(ex -> "Błąd połączenia: " + ex.getMessage());
+    }
+
+    public static CompletableFuture<String> importDictionaryJson(String jsonContent) {
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(ApiConfig.apiUri("/api/settings/dictionary/import"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(jsonContent))
+                .build();
+
+        return AuthService.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
+                .thenApply(response -> {
+                    if (response.statusCode() == 200) {
+                        DictionaryImportResult result = gson.fromJson(response.body(), DictionaryImportResult.class);
+                        return result != null && result.getMessage() != null
+                                ? result.getMessage()
+                                : "Słownik został zaimportowany.";
                     }
                     return response.body();
                 })
