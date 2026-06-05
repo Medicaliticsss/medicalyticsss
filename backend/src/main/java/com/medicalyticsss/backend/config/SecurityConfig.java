@@ -24,7 +24,7 @@ public class SecurityConfig {
 
                 // 2. Definiujemy dostęp do endpointów
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll() // Otwarte dla wszystkich
+                        .requestMatchers("/api/auth/login", "/api/auth/register", "/actuator/health").permitAll()
                         .anyRequest().authenticated() // Wszystkie inne wymagają sesji
                 )
 

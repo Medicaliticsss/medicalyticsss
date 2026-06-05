@@ -6,7 +6,6 @@ module com.example.frontend {
     requires java.desktop;
     requires com.google.gson;
     requires atlantafx.base;
-    requires org.apache.tomcat.embed.core;
 
     opens com.example.frontend to javafx.fxml, com.google.gson;
     exports com.example.frontend;

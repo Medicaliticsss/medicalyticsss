@@ -1,0 +1,45 @@
+services:
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: medicalytics
+      MARIADB_USER: medicalytics
+      MARIADB_PASSWORD: medicalytics
+      MARIADB_ROOT_PASSWORD: medicalytics_root
+    volumes:
+      - medicalytics-db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/medicalytics
+      SPRING_DATASOURCE_USERNAME: medicalytics
+      SPRING_DATASOURCE_PASSWORD: medicalytics
+    volumes:
+      - medicalytics-uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+
+volumes:
+  medicalytics-db:
+  medicalytics-uploads:
