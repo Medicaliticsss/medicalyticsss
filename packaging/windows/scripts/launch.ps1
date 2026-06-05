@@ -86,6 +86,7 @@ function Invoke-MysqlTcp {
     $args = @(
         "--defaults-file=$MyIni",
         "--protocol=tcp",
+        "--skip-ssl",
         "-h", $HostName,
         "-P", "3307",
         "-u", $User,
@@ -96,7 +97,7 @@ function Invoke-MysqlTcp {
     }
 
     $output = & $MysqlExe @args 2>&1
-    if (-not $?) {
+    if ($LASTEXITCODE -ne 0) {
         $details = ($output | Out-String).Trim()
         if ($details) {
             throw "MariaDB command failed: $details`n`n$(Get-MariaDbErrorTail)"
@@ -107,7 +108,16 @@ function Invoke-MysqlTcp {
 
 function Invoke-MysqlAdmin {
     param([string]$Sql)
-    Invoke-MysqlTcp -Sql $Sql -User "root" -HostName "localhost"
+    $lastError = $null
+    foreach ($hostName in @("127.0.0.1", "localhost")) {
+        try {
+            Invoke-MysqlTcp -Sql $Sql -User "root" -HostName $hostName
+            return
+        } catch {
+            $lastError = $_
+        }
+    }
+    throw $lastError
 }
 
 function Ensure-DatabaseUsers {
@@ -129,6 +139,18 @@ function Start-MariaDbServer {
         -WorkingDirectory $MysqlDir
 }
 
+function Test-MariaDbPortOpen {
+    $client = New-Object System.Net.Sockets.TcpClient
+    try {
+        $client.Connect("127.0.0.1", 3307)
+        $open = $client.Connected
+        $client.Close()
+        return $open
+    } catch {
+        return $false
+    }
+}
+
 function Wait-MariaDbReady {
     Write-Host "Waiting for database..."
     for ($i = 0; $i -lt 45; $i++) {
@@ -136,12 +158,11 @@ function Wait-MariaDbReady {
             throw "MariaDB stopped during startup.`n`n$(Get-MariaDbErrorTail)"
         }
 
-        try {
-            Invoke-MysqlTcp -Sql "SELECT 1" -User "root" -HostName "localhost" | Out-Null
+        if (Test-MariaDbPortOpen) {
             return
-        } catch {
-            Start-Sleep -Seconds 2
         }
+
+        Start-Sleep -Seconds 2
     }
     throw "MariaDB did not become ready.`n`n$(Get-MariaDbErrorTail)"
 }
@@ -216,7 +237,8 @@ if (-not (Test-Path $InitMarker)) {
 
     $installProcess = Start-Process -FilePath $MysqlInstallDbExe -ArgumentList @(
         "--datadir=$MysqlDataDir",
-        "-P", "3307"
+        "-P", "3307",
+        "-R"
     ) -Wait -PassThru -NoNewWindow -WorkingDirectory $MysqlDir
     if ($installProcess.ExitCode -ne 0) {
         throw "Database initialization failed (exit $($installProcess.ExitCode)). Delete `"$DataDir`" and try again."
