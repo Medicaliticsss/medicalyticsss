@@ -33,6 +33,26 @@ function Reset-MysqlDataDir {
     New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
 }
 
+function Ensure-DatabaseUsers {
+    & $MysqlExe --defaults-file="$MyIni" -u root --protocol=tcp -e @"
+CREATE DATABASE IF NOT EXISTS medicalytics;
+CREATE USER IF NOT EXISTS 'medicalytics'@'localhost' IDENTIFIED BY 'medicalytics';
+CREATE USER IF NOT EXISTS 'medicalytics'@'127.0.0.1' IDENTIFIED BY 'medicalytics';
+GRANT ALL PRIVILEGES ON medicalytics.* TO 'medicalytics'@'localhost';
+GRANT ALL PRIVILEGES ON medicalytics.* TO 'medicalytics'@'127.0.0.1';
+FLUSH PRIVILEGES;
+"@ | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        throw "Could not configure database users for the API."
+    }
+}
+
+function Get-BackendLogTail {
+    param([string]$LogPath, [int]$Lines = 20)
+    if (-not (Test-Path $LogPath)) { return "(no backend log written)" }
+    return (Get-Content $LogPath -Tail $Lines -ErrorAction SilentlyContinue) -join "`n"
+}
+
 $MysqldProcess = $null
 $BackendProcess = $null
 
@@ -110,14 +130,7 @@ if (-not (Test-Path $InitMarker)) {
     $MysqldProcess = Start-Process -FilePath $MysqldExe -ArgumentList @("--defaults-file=$MyIni") -WindowStyle Hidden -PassThru
     Start-Sleep -Seconds 10
 
-    & $MysqlExe --defaults-file="$MyIni" -u root --protocol=tcp -e "CREATE DATABASE IF NOT EXISTS medicalytics;"
-    if ($LASTEXITCODE -ne 0) { throw "Could not create medicalytics database." }
-
-    & $MysqlExe --defaults-file="$MyIni" -u root --protocol=tcp -e "CREATE USER IF NOT EXISTS 'medicalytics'@'localhost' IDENTIFIED BY 'medicalytics';"
-    if ($LASTEXITCODE -ne 0) { throw "Could not create medicalytics database user." }
-
-    & $MysqlExe --defaults-file="$MyIni" -u root --protocol=tcp -e "GRANT ALL PRIVILEGES ON medicalytics.* TO 'medicalytics'@'localhost'; FLUSH PRIVILEGES;"
-    if ($LASTEXITCODE -ne 0) { throw "Could not grant database privileges." }
+    Ensure-DatabaseUsers
 
     New-Item -ItemType File -Force -Path $InitMarker | Out-Null
     Stop-Services
@@ -126,34 +139,55 @@ if (-not (Test-Path $InitMarker)) {
 
 Write-Host "Starting database and API..."
 $MysqldProcess = Start-Process -FilePath $MysqldExe -ArgumentList @("--defaults-file=$MyIni") -WindowStyle Hidden -PassThru
-Start-Sleep -Seconds 4
+Start-Sleep -Seconds 6
 
+Ensure-DatabaseUsers
+
+$DataDirForJvm = $DataDir.Replace('\', '/')
+$BackendLog = Join-Path $LogsDir "backend.log"
+$BackendErrorLog = Join-Path $LogsDir "backend-error.log"
+if (Test-Path $BackendLog) { Remove-Item $BackendLog -Force }
+if (Test-Path $BackendErrorLog) { Remove-Item $BackendErrorLog -Force }
+
+# JVM -D options must appear before -jar, otherwise Java ignores them.
 $backendArgs = @(
+    "-Dmedicalytics.data.dir=$DataDirForJvm",
     "-jar", $BackendJar,
     "--spring.profiles.active=desktop",
-    "-Dmedicalytics.data.dir=$DataDir"
+    "--medicalytics.data.dir=$DataDirForJvm"
 )
-$BackendProcess = Start-Process -FilePath $JavaExe -ArgumentList $backendArgs -WindowStyle Hidden -PassThru -WorkingDirectory (Split-Path $BackendJar -Parent)
+$BackendProcess = Start-Process -FilePath $JavaExe -ArgumentList $backendArgs -WindowStyle Hidden -PassThru `
+    -WorkingDirectory (Split-Path $BackendJar -Parent) `
+    -RedirectStandardOutput $BackendLog -RedirectStandardError $BackendErrorLog
 
 Write-Host "Waiting for API..."
 $healthy = $false
 for ($i = 0; $i -lt 90; $i++) {
+    if ($BackendProcess.HasExited) {
+        $logTail = Get-BackendLogTail $BackendErrorLog
+        if ($logTail -eq "(no backend log written)") {
+            $logTail = Get-BackendLogTail $BackendLog
+        }
+        throw "Backend stopped unexpectedly.`n`nLog tail:`n$logTail"
+    }
+
     try {
         $response = Invoke-WebRequest -Uri "http://127.0.0.1:8080/actuator/health" -UseBasicParsing -TimeoutSec 2
-        if ($response.StatusCode -eq 200) {
+        if ($response.StatusCode -eq 200 -and $response.Content -match '"status"\s*:\s*"UP"') {
             $healthy = $true
             break
         }
     } catch {
-        if ($BackendProcess.HasExited) {
-            throw "Backend stopped unexpectedly. Check logs in $LogsDir"
-        }
         Start-Sleep -Seconds 2
     }
 }
 
 if (-not $healthy) {
-    throw "API did not become ready in time."
+    $logTail = Get-BackendLogTail $BackendErrorLog
+    if ($logTail -eq "(no backend log written)") {
+        $logTail = Get-BackendLogTail $BackendLog
+    }
+    throw "API did not become ready in time.`n`nLog tail:`n$logTail`n`nFull log: $BackendLog"
 }
 
 Write-Host "Launching Medicalytics..."
