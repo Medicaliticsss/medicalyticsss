@@ -5,18 +5,24 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'frontend/**'
-      - 'backend/**'
-      - 'packaging/windows/**'
-      - 'scripts/build-windows-package.*'
-      - '.github/workflows/build-windows-package.yml'
+    tags:
+      - 'v*'
   release:
     types: [published]
 
+permissions:
+  contents: write
+  actions: read
+
+concurrency:
+  group: windows-portable-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
+    name: Build medicalytics-windows-portable.zip
     runs-on: windows-latest
+    timeout-minutes: 45
 
     steps:
       - name: Checkout
@@ -31,17 +37,55 @@ jobs:
 
       - name: Build portable Windows package
         shell: pwsh
+        env:
+          CI: true
         run: ./scripts/build-windows-package.ps1
 
-      - name: Upload portable package
+      - name: Verify package
+        shell: pwsh
+        run: |
+          $zip = "dist/medicalytics-windows-portable.zip"
+          if (-not (Test-Path $zip)) {
+            throw "Package not found: $zip"
+          }
+          $sizeMb = [math]::Round((Get-Item $zip).Length / 1MB, 1)
+          Write-Host "Package size: $sizeMb MB"
+          if ($sizeMb -lt 50) {
+            throw "Package looks too small ($sizeMb MB). Build may have failed partially."
+          }
+
+      - name: Upload portable package artifact
         uses: actions/upload-artifact@v4
         with:
           name: medicalytics-windows-portable
           path: dist/medicalytics-windows-portable.zip
+          retention-days: 90
           if-no-files-found: error
+          compression-level: 0
 
       - name: Attach to GitHub Release
-        if: github.event_name == 'release'
+        if: github.event_name == 'release' || startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
           files: dist/medicalytics-windows-portable.zip
+          draft: ${{ github.event_name != 'release' }}
+          generate_release_notes: true
+
+      - name: Build summary
+        shell: pwsh
+        run: |
+          $sizeMb = [math]::Round((Get-Item "dist/medicalytics-windows-portable.zip").Length / 1MB, 1)
+          @"
+          ## Windows portable package
+
+          - **Artifact:** medicalytics-windows-portable
+          - **File:** medicalytics-windows-portable.zip ($sizeMb MB)
+          - **Run:** ${{ github.run_number }}
+
+          ### Download
+
+          1. Open this workflow run on GitHub
+          2. Scroll to **Artifacts**
+          3. Download **medicalytics-windows-portable**
+          4. Extract and double-click **Medicalytics.cmd**
+          "@ | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Encoding utf8
