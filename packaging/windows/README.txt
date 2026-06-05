@@ -5,6 +5,9 @@ Requirements:
   - Windows 10 or newer
   - No Java, Docker, or database installation needed
 
+Download:
+  https://github.com/Medicaliticsss/medicalyticsss/releases/latest
+
 How to run:
   1. Extract this folder anywhere (e.g. Desktop\Medicalytics)
   2. Double-click Medicalytics.cmd
