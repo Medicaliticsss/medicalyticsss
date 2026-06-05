@@ -38,15 +38,23 @@ fi
 
 export MEDICALYTICS_API_URL="${MEDICALYTICS_API_URL:-http://localhost:8080}"
 
-if [[ -x "$ROOT_DIR/dist/frontend/bin/app" ]]; then
-  echo "Launching packaged desktop app..."
-  exec "$ROOT_DIR/dist/frontend/bin/app"
+DESKTOP_BIN="$ROOT_DIR/dist/desktop/Medicalytics/bin/Medicalytics"
+LEGACY_BIN="$ROOT_DIR/dist/frontend/bin/app"
+
+if [[ -x "$DESKTOP_BIN" ]]; then
+  echo "Launching standalone desktop app..."
+  exec "$DESKTOP_BIN"
 fi
 
-if command -v mvn >/dev/null 2>&1; then
+if [[ -x "$LEGACY_BIN" ]]; then
+  echo "Launching packaged desktop app..."
+  exec "$LEGACY_BIN"
+fi
+
+if [[ -x "$ROOT_DIR/backend/mvnw" ]]; then
   echo "Launching desktop app with Maven..."
   cd "$ROOT_DIR/frontend"
-  exec mvn -q javafx:run
+  exec "$ROOT_DIR/backend/mvnw" -q -Pdev javafx:run
 fi
 
 echo
@@ -55,4 +63,4 @@ echo "API: $MEDICALYTICS_API_URL"
 echo
 echo "To open the desktop app, either:"
 echo "  1. Run ./scripts/build-frontend.sh once, then ./scripts/start.sh again"
-echo "  2. Or from the frontend folder: mvn javafx:run"
+echo "  2. Or launch only the UI with ./scripts/launch-desktop.sh"

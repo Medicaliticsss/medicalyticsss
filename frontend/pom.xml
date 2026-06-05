@@ -6,13 +6,17 @@
 
     <groupId>com.example</groupId>
     <artifactId>Frontend</artifactId>
-    <version>1.0-SNAPSHOT</version>
-    <name>Frontend</name>
+    <version>1.0.0</version>
+    <name>Medicalytics Desktop</name>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.release>21</maven.compiler.release>
         <junit.version>5.10.2</junit.version>
-        <javafx.version>23.0.1</javafx.version>
+        <javafx.version>21.0.6</javafx.version>
+        <app.name>Medicalytics</app.name>
+        <app.vendor>Medicalytics</app.vendor>
+        <skip.jpackage>false</skip.jpackage>
     </properties>
 
     <dependencies>
@@ -26,7 +30,6 @@
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-fxml</artifactId>
@@ -54,12 +57,6 @@
             <version>${junit.version}</version>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.apache.tomcat.embed</groupId>
-            <artifactId>tomcat-embed-core</artifactId>
-            <version>11.0.18</version>
-            <scope>compile</scope>
-        </dependency>
     </dependencies>
 
     <build>
@@ -69,28 +66,66 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.13.0</version>
                 <configuration>
-                    <source>23</source> <target>23</target>
+                    <release>${maven.compiler.release}</release>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
+                <configuration>
+                    <mainClass>com.example.frontend/com.example.frontend.Main</mainClass>
+                    <launcher>${app.name}</launcher>
+                    <jlinkImageName>app</jlinkImageName>
+                    <jlinkZipName>${app.name}-runtime</jlinkZipName>
+                    <noManPages>true</noManPages>
+                    <stripDebug>true</stripDebug>
+                    <noHeaderFiles>true</noHeaderFiles>
+                </configuration>
                 <executions>
                     <execution>
-                        <id>default-cli</id>
-                        <configuration>
-                            <mainClass>com.example.frontend/com.example.frontend.Main</mainClass>
-                            <launcher>app</launcher>
-                            <jlinkZipName>app</jlinkZipName>
-                            <jlinkImageName>app</jlinkImageName>
-                            <noManPages>true</noManPages>
-                            <stripDebug>true</stripDebug>
-                            <noHeaderFiles>true</noHeaderFiles>
-                        </configuration>
+                        <id>jlink-image</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jlink</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.panteleyev</groupId>
+                <artifactId>jpackage-maven-plugin</artifactId>
+                <version>1.6.6</version>
+                <configuration>
+                    <skip>${skip.jpackage}</skip>
+                    <name>${app.name}</name>
+                    <appVersion>${project.version}</appVersion>
+                    <vendor>${app.vendor}</vendor>
+                    <description>Medical data analytics desktop client</description>
+                    <destination>${project.build.directory}/dist</destination>
+                    <runtimeImage>${project.build.directory}/app</runtimeImage>
+                    <module>com.example.frontend/com.example.frontend.Main</module>
+                    <type>APP_IMAGE</type>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>desktop-app-image</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>jpackage</goal>
+                        </goals>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>dev</id>
+            <properties>
+                <skip.jpackage>true</skip.jpackage>
+            </properties>
+        </profile>
+    </profiles>
 </project>

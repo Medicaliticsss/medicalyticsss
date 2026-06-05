@@ -42,17 +42,22 @@ echo Backend is ready.
 
 if not defined MEDICALYTICS_API_URL set MEDICALYTICS_API_URL=http://localhost:8080
 
+if exist "dist\desktop\Medicalytics\Medicalytics.exe" (
+  echo Launching standalone desktop app...
+  start "" "dist\desktop\Medicalytics\Medicalytics.exe"
+  exit /b 0
+)
+
 if exist "dist\frontend\bin\app.bat" (
   echo Launching packaged desktop app...
   start "" "dist\frontend\bin\app.bat"
   exit /b 0
 )
 
-where mvn >nul 2>&1
-if not errorlevel 1 (
+if exist "backend\mvnw.cmd" (
   echo Launching desktop app with Maven...
   pushd frontend
-  mvn -q javafx:run
+  call ..\backend\mvnw.cmd -q -Pdev javafx:run
   popd
   exit /b 0
 )
@@ -62,5 +67,5 @@ echo Server stack is running.
 echo API: %MEDICALYTICS_API_URL%
 echo.
 echo To open the desktop app, either:
-echo   1. Run scripts\build-frontend.sh once, then scripts\start.bat again
-echo   2. Or from the frontend folder: mvn javafx:run
+echo   1. Run scripts\build-frontend.bat once, then scripts\start.bat again
+echo   2. Or launch only the UI with scripts\launch-desktop.bat
