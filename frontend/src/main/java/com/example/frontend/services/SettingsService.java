@@ -1,6 +1,7 @@
 package com.example.frontend.services;
 
 import com.example.frontend.models.AccountInfo;
+import com.example.frontend.models.DictionaryFetchResult;
 import com.example.frontend.models.DictionaryImportResult;
 import com.example.frontend.models.PasswordChangeRequest;
 import com.example.frontend.models.TestTypeEntry;
@@ -59,7 +60,7 @@ public class SettingsService {
                 .exceptionally(ex -> "Błąd połączenia: " + ex.getMessage());
     }
 
-    public static CompletableFuture<List<TestTypeEntry>> fetchDictionary() {
+    public static CompletableFuture<DictionaryFetchResult> fetchDictionary() {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(ApiConfig.apiUri("/api/settings/dictionary"))
                 .GET()
@@ -69,11 +70,20 @@ public class SettingsService {
                 .thenApply(response -> {
                     if (response.statusCode() == 200) {
                         List<TestTypeEntry> entries = gson.fromJson(response.body(), DICTIONARY_LIST_TYPE);
-                        return entries != null ? entries : Collections.<TestTypeEntry>emptyList();
+                        if (entries == null) {
+                            entries = Collections.emptyList();
+                        }
+                        return new DictionaryFetchResult(entries, null);
                     }
-                    return Collections.<TestTypeEntry>emptyList();
+                    if (response.statusCode() == 401) {
+                        return new DictionaryFetchResult(Collections.emptyList(),
+                                "Brak autoryzacji. Zaloguj się ponownie.");
+                    }
+                    return new DictionaryFetchResult(Collections.emptyList(),
+                            "Błąd API (" + response.statusCode() + "): " + response.body());
                 })
-                .exceptionally(ex -> Collections.<TestTypeEntry>emptyList());
+                .exceptionally(ex -> new DictionaryFetchResult(Collections.emptyList(),
+                        "Błąd połączenia: " + ex.getMessage()));
     }
 
     public static CompletableFuture<String> updateDictionaryEntry(TestTypeEntry entry) {
