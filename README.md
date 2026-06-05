@@ -2,17 +2,50 @@
 
 Medical data analytics platform with a Spring Boot REST API, MariaDB warehouse, and JavaFX desktop client.
 
-## Quick start (recommended)
+## Standalone desktop app
+
+Build a self-contained desktop application with a bundled Java runtime. No JDK or Maven is required to run it after building.
+
+**Build once (requires JDK 21+):**
+
+```bash
+chmod +x scripts/*.sh backend/mvnw
+./scripts/build-frontend.sh
+```
+
+Windows:
+
+```bat
+scripts\build-frontend.bat
+```
+
+**Run the desktop app:**
+
+```bash
+./scripts/launch-desktop.sh
+```
+
+Windows: `dist\desktop\Medicalytics\Medicalytics.exe`  
+Linux/macOS: `dist/desktop/Medicalytics/bin/Medicalytics`
+
+The build also creates an archive in `dist/` (`.tar.gz` on Linux/macOS, folder ready to zip on Windows).
+
+> The desktop app still needs the API running. Use the Docker quick start below, or point it at an existing server with `MEDICALYTICS_API_URL`.
+
+Pre-built packages for Linux, Windows, and macOS are produced by the [Build Desktop App](.github/workflows/build-desktop.yml) GitHub Actions workflow.
+
+## Quick start (API + desktop)
 
 Requirements:
 
 - [Docker](https://docs.docker.com/get-docker/) with Compose
-- For the desktop UI: JDK 23 + Maven, or run `./scripts/build-frontend.sh` once to create a standalone app
+- For building the desktop app: JDK 21+
 
-Start everything:
+Start the API and launch the UI:
 
 ```bash
 chmod +x scripts/*.sh
+./scripts/build-frontend.sh   # first time only
 ./scripts/start.sh
 ```
 
@@ -20,7 +53,7 @@ This command:
 
 1. Builds and starts MariaDB plus the backend API in Docker
 2. Waits until the API is healthy on port `8080`
-3. Launches the desktop app if a packaged build exists, otherwise runs it with Maven
+3. Launches the standalone desktop app
 
 Stop services:
 
@@ -31,6 +64,7 @@ Stop services:
 Windows:
 
 ```bat
+scripts\build-frontend.bat
 scripts\start.bat
 scripts\stop.bat
 ```
@@ -46,17 +80,6 @@ scripts\stop.bat
 
 Uploaded CSV files and database data are stored in Docker volumes, so they survive container restarts.
 
-## Desktop app packaging
-
-Build a self-contained JavaFX runtime (no Maven needed on later launches):
-
-```bash
-./scripts/build-frontend.sh
-./scripts/start.sh
-```
-
-The packaged app is created at `dist/frontend/bin/app`.
-
 ## Configuration
 
 | Variable | Default | Description |
@@ -68,7 +91,14 @@ Copy `.env.example` to `.env` if you want to customize database credentials befo
 
 ## Manual development setup
 
-For local development without Docker, see [docs/README.md](docs/README.md).
+For local development without Docker:
+
+```bash
+cd frontend
+../backend/mvnw -Pdev javafx:run
+```
+
+See [docs/README.md](docs/README.md) for the full manual setup.
 
 ## Architecture
 
