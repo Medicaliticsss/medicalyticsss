@@ -16,11 +16,21 @@ $JreZip = "temurin-jre-17-windows-x64.zip"
 $JreUrl = "https://api.adoptium.net/v3/binary/latest/17/ga/windows/x64/jre/hotspot/normal/eclipse?project=jdk"
 
 function Ensure-Download($Url, $Destination) {
+    if ($env:CI -eq "true" -and (Test-Path $Destination)) {
+        Remove-Item $Destination -Force
+    }
     if (-not (Test-Path $Destination)) {
         New-Item -ItemType Directory -Force -Path (Split-Path $Destination -Parent) | Out-Null
         Write-Host "Downloading $Url"
         Invoke-WebRequest -Uri $Url -OutFile $Destination -UseBasicParsing
     }
+}
+
+function Expand-ArchiveClean($ArchivePath, $DestinationPath) {
+    if (Test-Path $DestinationPath) {
+        Remove-Item $DestinationPath -Recurse -Force
+    }
+    Expand-Archive -Path $ArchivePath -DestinationPath $DestinationPath -Force
 }
 
 Write-Host "Building backend..."
@@ -46,13 +56,21 @@ New-Item -ItemType Directory -Force -Path (Join-Path $RuntimeDir "backend") | Ou
 Ensure-Download $MariaDbUrl (Join-Path $CacheDir $MariaDbZip)
 Ensure-Download $JreUrl (Join-Path $CacheDir $JreZip)
 
+if ($env:CI -eq "true" -and (Test-Path $CacheDir)) {
+    Remove-Item $CacheDir -Recurse -Force
+}
+
 Write-Host "Unpacking runtime dependencies..."
-Expand-Archive -Path (Join-Path $CacheDir $MariaDbZip) -DestinationPath (Join-Path $CacheDir "mariadb-extract") -Force
-$MariaDbExtracted = Get-ChildItem (Join-Path $CacheDir "mariadb-extract") | Where-Object { $_.PSIsContainer } | Select-Object -First 1
+$mariadbExtractDir = Join-Path $CacheDir "mariadb-extract"
+$jreExtractDir = Join-Path $CacheDir "jre-extract"
+Expand-ArchiveClean (Join-Path $CacheDir $MariaDbZip) $mariadbExtractDir
+$MariaDbExtracted = Get-ChildItem $mariadbExtractDir | Where-Object { $_.PSIsContainer } | Select-Object -First 1
+if (-not $MariaDbExtracted) { throw "MariaDB archive has unexpected structure." }
 Copy-Item -Path $MariaDbExtracted.FullName -Destination (Join-Path $RuntimeDir "mariadb") -Recurse
 
-Expand-Archive -Path (Join-Path $CacheDir $JreZip) -DestinationPath (Join-Path $CacheDir "jre-extract") -Force
-$JreExtracted = Get-ChildItem (Join-Path $CacheDir "jre-extract") | Where-Object { $_.PSIsContainer } | Select-Object -First 1
+Expand-ArchiveClean (Join-Path $CacheDir $JreZip) $jreExtractDir
+$JreExtracted = Get-ChildItem $jreExtractDir | Where-Object { $_.PSIsContainer } | Select-Object -First 1
+if (-not $JreExtracted) { throw "JRE archive has unexpected structure." }
 Copy-Item -Path $JreExtracted.FullName -Destination (Join-Path $RuntimeDir "jre") -Recurse
 
 Copy-Item $BackendJar.FullName (Join-Path $RuntimeDir "backend\backend.jar")
