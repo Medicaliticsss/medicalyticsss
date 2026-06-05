@@ -5,11 +5,11 @@ import com.example.frontend.models.ReportDataPoint;
 import com.example.frontend.models.ReportSummary;
 import com.example.frontend.models.SeriesReportDataPoint;
 import com.example.frontend.models.SeriesReportRequest;
+import com.example.frontend.utils.ApiConfig;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
-import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
@@ -22,7 +22,7 @@ public class ReportService {
     // Podsumowanie (Kafelki na głównym Dashboardzie)
     public static CompletableFuture<ReportSummary> fetchSummary() {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/api/reports/summary"))
+                .uri(ApiConfig.apiUri("/api/reports/summary"))
                 .GET()
                 .build();
 
@@ -41,7 +41,7 @@ public class ReportService {
             String jsonBody = gson.toJson(requestBody);
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/api/reports/custom"))
+                    .uri(ApiConfig.apiUri("/api/reports/custom"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                     .build();
@@ -68,7 +68,7 @@ public class ReportService {
             String jsonBody = gson.toJson(requestBody);
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/api/reports/custom/table"))
+                    .uri(ApiConfig.apiUri("/api/reports/custom/table"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                     .build();
@@ -95,7 +95,7 @@ public class ReportService {
             String jsonBody = gson.toJson(requestBody);
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/api/reports/series"))
+                    .uri(ApiConfig.apiUri("/api/reports/series"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                     .build();
@@ -122,7 +122,7 @@ public class ReportService {
             String jsonBody = gson.toJson(requestBody);
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/api/reports/raw"))
+                    .uri(ApiConfig.apiUri("/api/reports/raw"))
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
                     .build();

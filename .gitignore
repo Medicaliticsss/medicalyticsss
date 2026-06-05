@@ -25,3 +25,6 @@ replay_pid*
 
 # Ignorowane pliki wgrywane lokalnie przez uzytkownikow
 uploads/
+
+# Packaged desktop runtime
+dist/

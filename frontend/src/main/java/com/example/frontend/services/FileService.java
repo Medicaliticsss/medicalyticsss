@@ -2,11 +2,11 @@ package com.example.frontend.services;
 
 import com.example.frontend.models.FileItem;
 import com.example.frontend.models.ProcessingError;
+import com.example.frontend.utils.ApiConfig;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.util.Collections;
-import java.net.URI;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.List;
@@ -19,7 +19,7 @@ public class FileService {
 
     public static CompletableFuture<List<FileItem>> fetchFiles() {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/api/files"))
+                .uri(ApiConfig.apiUri("/api/files"))
                 .GET()
                 .build();
 
@@ -55,7 +55,7 @@ public class FileService {
             byte[] body = os.toByteArray();
 
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://localhost:8080/api/files/upload"))
+                    .uri(ApiConfig.apiUri("/api/files/upload"))
                     .header("Content-Type", "multipart/form-data; boundary=" + boundary)
                     .POST(HttpRequest.BodyPublishers.ofByteArray(body))
                     .build();
@@ -70,7 +70,7 @@ public class FileService {
     // Metoda do przetwarzania
     public static CompletableFuture<String> processFile(Long id) {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/api/files/" + id + "/process"))
+                .uri(ApiConfig.apiUri("/api/files/" + id + "/process"))
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
         return AuthService.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
@@ -80,7 +80,7 @@ public class FileService {
     // Metoda do usuwania
     public static CompletableFuture<String> deleteFile(Long id) {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/api/files/" + id + "/delete"))
+                .uri(ApiConfig.apiUri("/api/files/" + id + "/delete"))
                 .POST(HttpRequest.BodyPublishers.noBody())
                 .build();
         return AuthService.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
@@ -90,7 +90,7 @@ public class FileService {
     // Metoda do podglądu
     public static CompletableFuture<String[]> getFilePreview(Long id) {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/api/files/" + id + "/preview"))
+                .uri(ApiConfig.apiUri("/api/files/" + id + "/preview"))
                 .GET()
                 .build();
         return AuthService.getClient().sendAsync(request, HttpResponse.BodyHandlers.ofString())
@@ -100,7 +100,7 @@ public class FileService {
     // Metoda do wyswietlania bledow
     public static CompletableFuture<List<ProcessingError>> getFileErrors(Long fileId) {
         HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://localhost:8080/api/files/" + fileId + "/errors"))
+                .uri(ApiConfig.apiUri("/api/files/" + fileId + "/errors"))
                 .GET()
                 .build();
 
