@@ -18,3 +18,8 @@ Data is stored in:
 
 To stop the app:
   Close the Medicalytics window. The database and API stop automatically.
+
+If first launch fails with a database error:
+  1. Close Medicalytics
+  2. Delete folder: %LOCALAPPDATA%\Medicalytics
+  3. Start Medicalytics.cmd again

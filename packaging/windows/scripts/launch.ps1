@@ -13,8 +13,25 @@ $DesktopExe = Join-Path $RuntimeDir "desktop\Medicalytics.exe"
 $JavaExe = Join-Path $RuntimeDir "jre\bin\java.exe"
 $MysqldExe = Join-Path $MysqlDir "bin\mysqld.exe"
 $MysqlExe = Join-Path $MysqlDir "bin\mysql.exe"
+$MysqlInstallDbExe = Join-Path $MysqlDir "bin\mysql_install_db.exe"
+if (-not (Test-Path $MysqlInstallDbExe)) {
+    $MysqlInstallDbExe = Join-Path $MysqlDir "bin\mariadb-install-db.exe"
+}
 $MyIni = Join-Path $MysqlDir "my.ini"
 $InitMarker = Join-Path $DataDir "mysql-initialized"
+
+function Test-MysqlSystemTables {
+    param([string]$DataDir)
+    return Test-Path (Join-Path $DataDir "mysql")
+}
+
+function Reset-MysqlDataDir {
+    param([string]$DataDir)
+    if (Test-Path $DataDir) {
+        Remove-Item -Recurse -Force $DataDir
+    }
+    New-Item -ItemType Directory -Force -Path $DataDir | Out-Null
+}
 
 $MysqldProcess = $null
 $BackendProcess = $null
@@ -52,6 +69,7 @@ foreach ($path in @($DataDir, $MysqlDataDir, $UploadsDir, $LogsDir)) {
 if (-not (Test-Path $DesktopExe)) { throw "Desktop app not found: $DesktopExe" }
 if (-not (Test-Path $BackendJar)) { throw "Backend not found: $BackendJar" }
 if (-not (Test-Path $MysqldExe)) { throw "MariaDB not found: $MysqldExe" }
+if (-not (Test-Path $MysqlInstallDbExe)) { throw "MariaDB installer not found: $MysqlInstallDbExe" }
 
 $iniContent = @"
 [mysqld]
@@ -70,14 +88,37 @@ Set-Content -Path $MyIni -Value $iniContent -Encoding ASCII
 
 if (-not (Test-Path $InitMarker)) {
     Write-Host "First launch: preparing local database (this may take a minute)..."
-    & $MysqldExe --defaults-file="$MyIni" --initialize-insecure | Out-Null
+
+    $hasDataFiles = (Test-Path $MysqlDataDir) -and
+        ((Get-ChildItem $MysqlDataDir -Force -ErrorAction SilentlyContinue | Measure-Object).Count -gt 0)
+    if ($hasDataFiles -and -not (Test-MysqlSystemTables $MysqlDataDir)) {
+        Write-Host "Removing incomplete database files from a previous attempt..."
+        Reset-MysqlDataDir $MysqlDataDir
+    } elseif (-not $hasDataFiles) {
+        New-Item -ItemType Directory -Force -Path $MysqlDataDir | Out-Null
+    }
+
+    # MariaDB 11.x does not support mysqld --initialize-insecure (MySQL-only option).
+    $installProcess = Start-Process -FilePath $MysqlInstallDbExe -ArgumentList @(
+        "--datadir=$MysqlDataDir",
+        "-P", "3307"
+    ) -Wait -PassThru -NoNewWindow
+    if ($installProcess.ExitCode -ne 0) {
+        throw "Database initialization failed (exit $($installProcess.ExitCode)). Delete `"$DataDir`" and try again."
+    }
 
     $MysqldProcess = Start-Process -FilePath $MysqldExe -ArgumentList @("--defaults-file=$MyIni") -WindowStyle Hidden -PassThru
     Start-Sleep -Seconds 10
 
-    & $MysqlExe --defaults-file="$MyIni" -u root --protocol=tcp -e "CREATE DATABASE IF NOT EXISTS medicalytics;" | Out-Null
-    & $MysqlExe --defaults-file="$MyIni" -u root --protocol=tcp -e "CREATE USER IF NOT EXISTS 'medicalytics'@'localhost' IDENTIFIED BY 'medicalytics';" | Out-Null
-    & $MysqlExe --defaults-file="$MyIni" -u root --protocol=tcp -e "GRANT ALL PRIVILEGES ON medicalytics.* TO 'medicalytics'@'localhost'; FLUSH PRIVILEGES;" | Out-Null
+    & $MysqlExe --defaults-file="$MyIni" -u root --protocol=tcp -e "CREATE DATABASE IF NOT EXISTS medicalytics;"
+    if ($LASTEXITCODE -ne 0) { throw "Could not create medicalytics database." }
+
+    & $MysqlExe --defaults-file="$MyIni" -u root --protocol=tcp -e "CREATE USER IF NOT EXISTS 'medicalytics'@'localhost' IDENTIFIED BY 'medicalytics';"
+    if ($LASTEXITCODE -ne 0) { throw "Could not create medicalytics database user." }
+
+    & $MysqlExe --defaults-file="$MyIni" -u root --protocol=tcp -e "GRANT ALL PRIVILEGES ON medicalytics.* TO 'medicalytics'@'localhost'; FLUSH PRIVILEGES;"
+    if ($LASTEXITCODE -ne 0) { throw "Could not grant database privileges." }
+
     New-Item -ItemType File -Force -Path $InitMarker | Out-Null
     Stop-Services
     $MysqldProcess = $null
