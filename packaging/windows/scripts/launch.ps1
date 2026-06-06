@@ -243,6 +243,33 @@ function Get-BackendLogTail {
     return "(no backend log written yet)"
 }
 
+function Unblock-PortableAppFiles {
+    foreach ($path in @($InstallRoot, $DataDir)) {
+        if (-not (Test-Path $path)) { continue }
+        Get-ChildItem -Path $path -Recurse -ErrorAction SilentlyContinue | Unblock-File -ErrorAction SilentlyContinue
+    }
+}
+
+function Start-DesktopApp {
+    $DesktopDir = Split-Path $DesktopExe -Parent
+    Unblock-PortableAppFiles
+
+    $env:MEDICALYTICS_API_URL = "http://127.0.0.1:8080"
+
+    try {
+        return Start-Process -FilePath $DesktopExe -WorkingDirectory $DesktopDir -PassThru -ErrorAction Stop
+    } catch {
+        throw @"
+Failed to start desktop app: $($_.Exception.Message)
+
+If you downloaded the zip from the internet, Windows may be blocking it.
+Right-click the extracted folder -> Properties -> check 'Unblock' -> Apply, then try again.
+
+Desktop app: $DesktopExe
+"@
+    }
+}
+
 $MysqldProcess = $null
 $BackendProcess = $null
 
@@ -279,6 +306,7 @@ if (-not (Test-Path $MysqldExe)) { throw "MariaDB not found: $MysqldExe" }
 if (-not (Test-Path $MysqlInstallDbExe)) { throw "MariaDB installer not found: $MysqlInstallDbExe" }
 
 Write-MyIni
+Unblock-PortableAppFiles
 
 if (-not (Test-Path $InitMarker)) {
     Write-Host "First launch: preparing local database (this may take a minute)..."
@@ -336,8 +364,7 @@ $BackendProcess = Start-Process -FilePath $JavaExe -ArgumentList $backendArgs -W
 Wait-ForApi
 
 Write-Host "Launching Medicalytics..."
-$env:MEDICALYTICS_API_URL = "http://127.0.0.1:8080"
-$DesktopProcess = Start-Process -FilePath $DesktopExe -PassThru
+$DesktopProcess = Start-DesktopApp
 Wait-Process -Id $DesktopProcess.Id
 
 Write-Host "Shutting down..."

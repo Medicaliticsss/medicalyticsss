@@ -26,3 +26,8 @@ If startup fails:
      - mariadb-error.log (database)
   3. For database errors, delete folder: %LOCALAPPDATA%\Medicalytics
   4. Download the latest zip and start Medicalytics.cmd again
+
+If Windows blocks the app ("operation was cancelled by the user"):
+  1. Right-click the extracted Medicalytics-Windows folder
+  2. Properties -> Unblock -> Apply
+  3. Run Medicalytics.cmd again
