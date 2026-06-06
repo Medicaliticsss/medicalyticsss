@@ -19,13 +19,11 @@ public class RegisterView {
         layout.setAlignment(Pos.CENTER);
 
         ImageView logoView = new ImageView();
-        try {
-            Image logoImage = new Image(RegisterView.class.getResourceAsStream("/images/przezroczyste.png"));
-            logoView.setImage(logoImage);
+        var logoUrl = RegisterView.class.getResource("/images/przezroczyste.png");
+        if (logoUrl != null) {
+            logoView.setImage(new Image(logoUrl.toExternalForm()));
             logoView.setFitWidth(300);
             logoView.setPreserveRatio(true);
-        } catch (Exception e) {
-            System.err.println("Błąd ładowania logo: " + e.getMessage());
         }
         Label titleLabel = new Label("Rejestracja");
         titleLabel.getStyleClass().add(Styles.TITLE_3);

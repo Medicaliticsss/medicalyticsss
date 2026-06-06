@@ -26,13 +26,11 @@ public class LoginView {
         titleLabel.setStyle("-fx-text-fill: #FF0055;");
 
         ImageView logoView = new ImageView();
-        try {
-            Image logoImage = new Image(LoginView.class.getResourceAsStream("/images/przezroczyste.png"));
-            logoView.setImage(logoImage);
+        var logoUrl = LoginView.class.getResource("/images/przezroczyste.png");
+        if (logoUrl != null) {
+            logoView.setImage(new Image(logoUrl.toExternalForm()));
             logoView.setFitWidth(350);
             logoView.setPreserveRatio(true);
-        } catch (Exception e) {
-            System.err.println("Błąd ładowania logo: " + e.getMessage());
         }
         Label screenTitle = new Label("Logowanie");
         screenTitle.getStyleClass().add(Styles.TITLE_3);
@@ -57,8 +55,6 @@ public class LoginView {
             AuthService.login(usernameInput.getText(), passwordInput.getText()).thenAccept(res -> {
                 Platform.runLater(() -> {
                     if (res.equals("SUCCESS")) {
-                        UserSession.getInstance().startSession(usernameInput.getText());
-
                         ViewManager.switchView(MainMenuView.getView());
                     } else {
                         errorLabel.setText(res);

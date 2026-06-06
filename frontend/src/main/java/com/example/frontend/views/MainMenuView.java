@@ -22,13 +22,11 @@ public class MainMenuView {
         root.setPadding(new Insets(40));
 
         ImageView logoView = new ImageView();
-        try {
-            Image logoImage = new Image(MainMenuView.class.getResourceAsStream("/images/przezroczyste.png"));
-            logoView.setImage(logoImage);
+        var logoUrl = MainMenuView.class.getResource("/images/przezroczyste.png");
+        if (logoUrl != null) {
+            logoView.setImage(new Image(logoUrl.toExternalForm()));
             logoView.setFitHeight(500);
             logoView.setPreserveRatio(true);
-        } catch (Exception e) {
-            System.err.println("Błąd ładowania logo: " + e.getMessage());
         }
         Button logoutBtn = new Button("Wyloguj");
         logoutBtn.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.DANGER);
