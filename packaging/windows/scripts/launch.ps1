@@ -243,21 +243,51 @@ function Get-BackendLogTail {
     return "(no backend log written yet)"
 }
 
+function Clear-FileMotw {
+    param([string]$FilePath)
+    if (-not (Test-Path -LiteralPath $FilePath)) { return }
+    Unblock-File -LiteralPath $FilePath -ErrorAction SilentlyContinue
+    $zonePath = "${FilePath}:Zone.Identifier"
+    if (Test-Path -LiteralPath $zonePath) {
+        Remove-Item -LiteralPath $zonePath -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Unblock-PortableAppFiles {
     foreach ($path in @($InstallRoot, $DataDir)) {
         if (-not (Test-Path $path)) { continue }
-        Get-ChildItem -Path $path -Recurse -ErrorAction SilentlyContinue | Unblock-File -ErrorAction SilentlyContinue
+        Get-ChildItem -Path $path -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
+            Clear-FileMotw $_.FullName
+        }
+    }
+}
+
+function Unblock-RuntimeExecutables {
+    foreach ($exe in @($JavaExe, $MysqldExe, $MysqlExe, $MysqlInstallDbExe, $DesktopExe)) {
+        Clear-FileMotw $exe
     }
 }
 
 function Start-DesktopApp {
     $DesktopDir = Split-Path $DesktopExe -Parent
     Unblock-PortableAppFiles
+    Unblock-RuntimeExecutables
+
+    if (Test-Path $DesktopDir) {
+        Get-ChildItem -Path $DesktopDir -Recurse -File -ErrorAction SilentlyContinue | ForEach-Object {
+            Clear-FileMotw $_.FullName
+        }
+    }
 
     $env:MEDICALYTICS_API_URL = "http://127.0.0.1:8080"
 
     try {
-        return Start-Process -FilePath $DesktopExe -WorkingDirectory $DesktopDir -PassThru -ErrorAction Stop
+        $process = Start-Process -FilePath $DesktopExe -WorkingDirectory $DesktopDir -PassThru -ErrorAction Stop
+        Start-Sleep -Milliseconds 750
+        if ($process.HasExited) {
+            throw "Desktop app exited immediately (exit code $($process.ExitCode))."
+        }
+        return $process
     } catch {
         throw @"
 Failed to start desktop app: $($_.Exception.Message)
@@ -307,6 +337,7 @@ if (-not (Test-Path $MysqlInstallDbExe)) { throw "MariaDB installer not found: $
 
 Write-MyIni
 Unblock-PortableAppFiles
+Unblock-RuntimeExecutables
 
 if (-not (Test-Path $InitMarker)) {
     Write-Host "First launch: preparing local database (this may take a minute)..."
