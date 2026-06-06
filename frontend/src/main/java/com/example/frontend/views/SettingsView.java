@@ -50,7 +50,7 @@ public class SettingsView {
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         VBox.setVgrow(tabPane, Priority.ALWAYS);
         root.setCenter(tabPane);
-
+        root.setBottom(UserSession.getInstance().createFooter());
         return root;
     }
 

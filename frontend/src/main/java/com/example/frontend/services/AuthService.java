@@ -34,7 +34,7 @@ public class AuthService {
                 .thenApply(response -> {
                     if (response.statusCode() == 200) {
                         // Jeśli sukces, zapisujemy użytkownika w sesji lokalnej
-                        UserSession.getInstance().login(username);
+                        UserSession.getInstance().startSession(username);
                         return "SUCCESS";
                     } else {
                         return "Błąd logowania: " + response.body();
@@ -53,13 +53,13 @@ public class AuthService {
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     // Czyścimy wszystko lokalnie niezależnie od odpowiedzi serwera
-                    UserSession.getInstance().logout();
+                    UserSession.getInstance().clearSession();
                     ((CookieManager) client.cookieHandler().get()).getCookieStore().removeAll();
                     return true;
                 })
                 .exceptionally(ex -> {
                     // Nawet jak serwer padnie, wyloguj nas lokalnie
-                    UserSession.getInstance().logout();
+                    UserSession.getInstance().clearSession();
                     return true;
                 });
     }
@@ -96,7 +96,7 @@ public class AuthService {
                         String username = body.startsWith(prefix)
                                 ? body.substring(prefix.length()).trim()
                                 : body.trim();
-                        UserSession.getInstance().login(username);
+                        UserSession.getInstance().startSession(username);
                         return true;
                     }
                     return false;

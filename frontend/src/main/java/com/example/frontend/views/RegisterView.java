@@ -9,6 +9,8 @@ import javafx.geometry.Pos;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 public class RegisterView {
     public static Parent getView() {
@@ -16,8 +18,18 @@ public class RegisterView {
         layout.setPadding(new Insets(30));
         layout.setAlignment(Pos.CENTER);
 
+        ImageView logoView = new ImageView();
+        try {
+            Image logoImage = new Image(RegisterView.class.getResourceAsStream("/images/przezroczyste.png"));
+            logoView.setImage(logoImage);
+            logoView.setFitWidth(300);
+            logoView.setPreserveRatio(true);
+        } catch (Exception e) {
+            System.err.println("Błąd ładowania logo: " + e.getMessage());
+        }
         Label titleLabel = new Label("Rejestracja");
-        titleLabel.getStyleClass().add(Styles.TITLE_2);
+        titleLabel.getStyleClass().add(Styles.TITLE_3);
+        titleLabel.setStyle("-fx-text-fill: #888888;");
 
         TextField userIn = new TextField();
         userIn.setPromptText("Stwórz login");
@@ -57,7 +69,7 @@ public class RegisterView {
         backBtn.getStyleClass().add(Styles.BUTTON_OUTLINED);
         backBtn.setOnAction(e -> ViewManager.switchView(LoginView.getView()));
 
-        layout.getChildren().addAll(titleLabel, userIn, passIn, regBtn, backBtn, statusLabel);
+        layout.getChildren().addAll(logoView, titleLabel, userIn, passIn, regBtn, backBtn, statusLabel);
         return layout;
     }
 }

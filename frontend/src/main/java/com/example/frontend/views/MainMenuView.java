@@ -1,5 +1,6 @@
 package com.example.frontend.views;
 
+import com.example.frontend.models.UserSession;
 import com.example.frontend.services.AuthService;
 import com.example.frontend.utils.ViewManager;
 import atlantafx.base.theme.Styles;
@@ -12,22 +13,33 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 
 public class MainMenuView {
     public static Parent getView() {
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(40));
 
-        Label titleLabel = new Label("Główne Menu");
-        titleLabel.getStyleClass().add(Styles.TITLE_1);
-
+        ImageView logoView = new ImageView();
+        try {
+            Image logoImage = new Image(MainMenuView.class.getResourceAsStream("/images/przezroczyste.png"));
+            logoView.setImage(logoImage);
+            logoView.setFitHeight(500);
+            logoView.setPreserveRatio(true);
+        } catch (Exception e) {
+            System.err.println("Błąd ładowania logo: " + e.getMessage());
+        }
         Button logoutBtn = new Button("Wyloguj");
         logoutBtn.getStyleClass().addAll(Styles.BUTTON_OUTLINED, Styles.DANGER);
         logoutBtn.setOnAction(e -> AuthService.logout().thenAccept(ok ->
-                Platform.runLater(() -> ViewManager.switchView(LoginView.getView()))
-        ));
-
-        StackPane top = new StackPane(titleLabel, logoutBtn);
+                Platform.runLater(() -> {
+                    UserSession.getInstance().clearSession();
+                    ViewManager.switchView(LoginView.getView());
+                })
+                ));
+        StackPane top = new StackPane(logoView, logoutBtn);
+        StackPane.setAlignment(logoView, Pos.CENTER);
         StackPane.setAlignment(logoutBtn, Pos.CENTER_RIGHT);
         root.setTop(top);
 
@@ -45,7 +57,7 @@ public class MainMenuView {
 
         cards.getChildren().addAll(filesBtn, reportsBtn, settingsBtn);
         root.setCenter(cards);
-
+        root.setBottom(UserSession.getInstance().createFooter());
         return root;
     }
 
